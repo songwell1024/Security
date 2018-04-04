@@ -1,0 +1,50 @@
+package test;
+
+import encryption.AESUtil;
+import encryption.BytesToHex;
+
+public class testAES {
+	
+	public static String toStringHex(String s) {  
+        byte[] baKeyword = new byte[s.length() / 2];  
+        for (int i = 0; i < baKeyword.length; i++) {  
+            try {  
+                baKeyword[i] = (byte) (0xff & Integer.parseInt(s.substring(i * 2, i * 2 + 2), 16));  
+            } catch (Exception e) {  
+                e.printStackTrace();  
+            }  
+        }  
+        try {  
+            s = new String(baKeyword, "utf-8");  
+        } catch (Exception e1) {  
+            e1.printStackTrace();  
+        }  
+        return s;  
+    }
+
+	//待加密的原文
+	public static final String DATA = "hi, welcome to my git area!";
+	
+	public static void main(String[] args) throws Exception {
+		//获得密钥
+		byte[] aesKey = AESUtil.initKey();
+		String str = BytesToHex.fromBytesToHex(aesKey);
+		System.out.println("AES 密钥 : " + Integer.parseInt(str,16));
+		//加密
+		byte[] encrypt = AESUtil.encryptAES(DATA.getBytes(), aesKey);
+		System.out.println(DATA + " AES 加密 : " + BytesToHex.fromBytesToHex(encrypt));
+		
+		//解密
+		byte[] plain = AESUtil.decryptAES(encrypt, aesKey);
+		System.out.println(DATA + " AES 解密 : " + new String(plain));
+	}
+	
+	public static int hexToTen(String s){  
+        int m=0;  
+        for(int i=0;i<s.length();i++){  
+            System.out.println("16*"+m+"   getRealValue(s.charAt(i)   "+getRealValue(s.charAt(i)));  
+            m=16*m+getRealValue(s.charAt(i));  
+        }  
+        return m;  
+    }  
+}

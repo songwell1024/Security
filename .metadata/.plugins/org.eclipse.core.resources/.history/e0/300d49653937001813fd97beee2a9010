@@ -1,0 +1,5 @@
+eclipse.preferences.version=1
+encoding//src/encryption=GBK
+encoding//src/encryption/AESUtil.java=UTF-8
+encoding//src/encryption/Base64Util.java=UTF-8
+encoding/<project>=GBK

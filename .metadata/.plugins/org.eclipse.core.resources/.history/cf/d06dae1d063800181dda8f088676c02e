@@ -1,0 +1,9 @@
+eclipse.preferences.version=1
+encoding//src/EncryptionAlgorithm/AESUtil.java=UTF-8
+encoding//src/song/AESutils.java=UTF-8
+encoding//src/song/BaseUtils.java=UTF-8
+encoding//src/song/HmacUtils.java=UTF-8
+encoding//src/song/MD5Utils.java=UTF-8
+encoding//src/song/RSAutils.java=UTF-8
+encoding//src/song/SHAutils.java=UTF-8
+encoding/<project>=GBK

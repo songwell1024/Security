@@ -1,5 +1,6 @@
 <?xml version="1.0" encoding="UTF-8" standalone="no"?>
 <qualifiedTypeNameHistroy>
-    <fullyQualifiedTypeName name="DES.DesData"/>
-    <fullyQualifiedTypeName name="java.util.Scanner"/>
+    <fullyQualifiedTypeName name="DES.Des"/>
+    <fullyQualifiedTypeName name="Hash.Hash"/>
+    <fullyQualifiedTypeName name="AES.Aes"/>
 </qualifiedTypeNameHistroy>

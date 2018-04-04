@@ -1,0 +1,31 @@
+package System;
+
+import DES.DesAlgorithm;
+import DES.Function;
+import Hash.Hash;
+import java.util.Scanner;
+
+public class Security {
+	public static void main(String[] args){
+        System.out.println();
+        @SuppressWarnings("resource")
+		Scanner in = new Scanner(System.in);
+        System.out.println("请输入明文(支持任意长度字母数字组合)：");
+        String md5str = in.nextLine();
+        String str = Hash.string2MD5(md5str);
+        String mmmmmm = Hash.toStringHex(str);
+        System.out.println("请输入密钥(支持任意格式输入)：");
+        String kkkkkk = in.nextLine();
+        String[] M = Function.all2string(mmmmmm);
+        char[] K = Function.keypre(kkkkkk);
+        DesAlgorithm descore = new  DesAlgorithm();
+        String mimi = descore.en(M, K);
+        String mimistring = Function.byte2string(mimi);
+        String demimi = descore.de(Function.all222string(mimi), K);
+        String demimistring = Function.byte2string(demimi);
+        System.out.println("明文："+mmmmmm);
+        System.out.println("密文："+mimistring);
+        System.out.println("解密："+demimistring);
+	}
+
+}

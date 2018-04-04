@@ -1,0 +1,38 @@
+package System;
+
+import DES.DesAlgorithm;
+import DES.Function;
+import Hash.Hash;
+import AES.Aes;
+import java.util.Scanner;
+
+public class Security {
+	public static void main(String[] args){
+        System.out.println();
+        @SuppressWarnings("resource")
+		Scanner in = new Scanner(System.in);
+        System.out.println("请输入明文(支持任意长度字母数字组合)：");
+        String str = in.nextLine();
+        String md5str = Hash.string2MD5(str);
+        String mmmmmm = Hash.toStringHex(md5str);
+        System.out.println("请输入密钥(支持任意格式输入)：");
+        String kkkkkk = in.nextLine();
+//        String[] M = Function.all2string(mmmmmm);
+//        char[] K = Function.keypre(kkkkkk);
+//        DesAlgorithm descore = new  DesAlgorithm();
+//        String mimi = descore.en(M, K);
+//        String mimistring = Function.byte2string(mimi);
+//        String demimi = descore.de(Function.all222string(mimi), K);
+//        String demimistring = Function.byte2string(demimi);
+//        System.out.println("明文："+mmmmmm);
+//        System.out.println("密文："+mimistring);
+//        System.out.println("解密："+demimistring);
+        
+        String hmstr= mmmmmm.concat(str);   //字符串拼接
+        byte[] encryptResult = Aes.encrypt(str, new String(kkkkkk));
+        System.out.println("AES加密密文："+new String(encryptResult));
+        byte[] decryptResult =Aes.decrypt(encryptResult,kkkkkk);     
+        System.out.println("解密后：" + new String(decryptResult));    
+	}
+
+}
