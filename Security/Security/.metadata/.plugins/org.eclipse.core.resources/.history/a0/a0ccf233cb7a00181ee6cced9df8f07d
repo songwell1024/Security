@@ -1,0 +1,8 @@
+package System下：
+    MyFrame是界面框架
+    Security是整个系统的主文件
+package EncryptionAlgorithm下：
+    BytesAndHex是进制准换的辅助函数
+            其余是加密算法和Hash函数
+package Font下：
+	界面的字体设置文件

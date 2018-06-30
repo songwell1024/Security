@@ -1,0 +1,2082 @@
+package System;
+
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.event.ActionListener;
+import java.awt.datatransfer.Clipboard;
+import java.awt.datatransfer.DataFlavor;
+import java.awt.event.InputEvent;
+import java.awt.event.ActionEvent;
+import java.awt.datatransfer.Transferable;
+import java.awt.datatransfer.StringSelection;
+import java.awt.color.*;
+import java.awt.font.*;
+import java.awt.image.*;
+import java.awt.Container;
+import java.awt.event.KeyEvent;
+import java.awt.event.MouseAdapter;
+import java.awt.event.MouseEvent;
+import java.awt.event.WindowAdapter;
+import java.awt.event.WindowEvent;
+import java.awt.Toolkit.*;
+import java.awt.print.*;
+
+import java.util.Calendar;
+import java.util.Properties;
+import java.util.Date;
+import java.util.Timer;
+import java.util.TimerTask;
+
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import javax.swing.event.MenuEvent;
+import javax.swing.event.MenuListener;
+import javax.swing.event.UndoableEditEvent;
+import javax.swing.event.UndoableEditListener;
+import javax.swing.undo.UndoManager;
+import javax.swing.undo.CannotUndoException;
+import javax.swing.JCheckBoxMenuItem;
+import javax.swing.JCheckBox;
+import javax.swing.JFrame;
+import javax.swing.BorderFactory;  
+import javax.swing.ButtonGroup;  
+import javax.swing.JButton;   
+import javax.swing.JColorChooser;  
+import javax.swing.JDialog;  
+import javax.swing.JFileChooser;  
+import javax.swing.JLabel;  
+import javax.swing.JMenu;  
+import javax.swing.JMenuBar;  
+import javax.swing.JMenuItem;  
+import javax.swing.JOptionPane;  
+import javax.swing.JPanel;  
+import javax.swing.JPopupMenu;  
+import javax.swing.JRadioButton;  
+import javax.swing.JScrollPane;  
+import javax.swing.JTextArea;  
+import javax.swing.JTextField;  
+import javax.swing.KeyStroke;  
+import Font.MyFont;
+
+import java.io.File.*;
+import java.io.File;
+import java.io.FileInputStream;
+import java.io.FileOutputStream;
+import java.io.FileNotFoundException;
+import java.io.FileReader;
+import java.io.FileWriter;
+import java.io.IOException;
+import java.io.OutputStream;
+import java.io.OutputStreamWriter;
+import java.io.RandomAccessFile;
+import java.io.PrintWriter;
+
+import EncryptionAlgorithm.BytesAndHex;
+import EncryptionAlgorithm.AESUtil;
+import EncryptionAlgorithm.DESede;
+import EncryptionAlgorithm.DESUtil;
+import EncryptionAlgorithm.HashUtil;
+import EncryptionAlgorithm.RSAUtil;
+
+import java.lang.NullPointerException;
+import java.util.Map;
+
+/**
+ * UI
+ * @author WilsonSong
+ * @version 2018-05-21 
+ */
+@SuppressWarnings("serial")
+public class MyFrame extends JFrame implements ActionListener, DocumentListener {
+	private String EncryptionAlgorithm = "DES";  //存放加密算法, 默认DES
+	private String HashAlgorithm = "MD5";   //存放Hash函数, 默认MD5
+	private String EncryptionStr;   //密文
+	private String DecryptionStr;  //明文
+	private String EncryptionKeyStr;  //秘钥
+	private String JDecryptionStr;   //解密的密文
+	int PlanetLength;   //Hash函数加密后的内容的长度
+	String  publicKey1,publicKey2;   //公钥
+    String  privateKey1,privateKey2; //私钥
+	private String RKey;    //字节码秘钥
+	byte[] byteResult; //字节码密文
+	String Base64Str; //编码密文
+	JButton Encryption, Decryption, Help; 
+	JTextArea PlainText, EncryptionKey, EncryptionText, DecryptionText;
+	JComboBox<String> SecutityCombo, HashCombo;
+	
+	//菜单栏
+	JMenu fileMenu, editMenu, formatMenu, viewMenu, helpMenu;
+	JTextArea editArea;  //文本编辑区
+	//文件栏菜单选项
+	JMenuItem fileNew, fileOpen, fileSave, fileSaveAs, filePageSet, filePrint, fileExit ;
+	//编辑栏的菜单选项
+	JMenuItem editCut, editCopy, editPaste, editDelete, editFind, editUndo, 
+					editFindNext, editGoTo, editDate, editSelectAll, editReplace;
+	//格式栏菜单选项
+	JMenuItem formatFont, formatBackGround, formatFontColor;
+    JCheckBoxMenuItem formatLineWrap;  	//自动换行注意需要换成可查看选中状态的
+	//查看栏菜单选项
+    JCheckBoxMenuItem stateItem;
+	//帮助栏菜单选项
+	JMenuItem aboutNote, lookHelp;
+	//弹出菜单栏
+	JPopupMenu popupMenu;
+	//弹出菜单栏选项
+	JMenuItem popupMenuUndo, popupMenuCut, popupMenuCopy, popupMenuPaste, popupMenuDelete, popupMenuSelectAll;
+	//标签栏
+	JLabel statusLabel1, statusLabel2;
+	String oldText;//存放编辑区原来的内容，用于比较文本是否有改动   
+	File currentFile;      //保存当前的文件名
+	//撤销管理器
+	protected UndoManager undo = new UndoManager();    
+    protected UndoableEditListener undoHandler = new UndoHandler();
+    
+    boolean isNewFile = true;      //判断是否有新文件
+    
+    PrintJob  p=null;//声明一个要打印的对象  
+    Graphics  g=null;//要打印的对象  
+    
+    //系统剪贴板
+    Toolkit toolkit=Toolkit.getDefaultToolkit();    
+    Clipboard clipBoard = toolkit.getSystemClipboard();
+	
+	
+	String aejbchopcEStr;
+	
+	/*
+	 * UI初始化
+	 */
+	public MyFrame() throws Exception{
+		initFrame();
+		initMenu();
+		initTextEditArea(PlainText);
+		initTextEditArea(EncryptionText);
+		
+	}
+	
+	/*
+	 * UI初始化函数
+	 */
+	public void initFrame() throws Exception {
+		//Toolkit kit = Toolkit.getDefaultToolkit();
+        this.setSize(680,541);  
+        this.setLocationRelativeTo(null);  
+        //设置主对话框可以被关闭 
+        this.setDefaultCloseOperation(JFrame.EXIT_ON_CLOSE);
+        
+        //设置一个容器
+        Container con = this.getContentPane();
+        con.setLayout(new FlowLayout(FlowLayout.LEFT));
+        //标签
+        JLabel searchContentLabel = new JLabel("明文 :");  
+        JLabel SecurityLabel = new JLabel("密文:");  
+        JLabel JieMiLabel = new JLabel("解密 :");
+        JLabel AlgorithmContentLabel = new JLabel("算法:");
+        JLabel HashContentLabel = new JLabel("Hash:");
+        //文本编辑区
+        PlainText = new JTextArea(7, 55);  //明文文本区
+        PlainText.setWrapStyleWord(true);  //文字长度超过一行时自动换行
+        PlainText.setLineWrap(true);  //文本编辑区默认自动换行
+        
+        EncryptionText = new JTextArea(8, 55);  // 密文文本区
+        EncryptionText.setWrapStyleWord(true);  //文字长度超过一行时自动换行
+        EncryptionText.setLineWrap(true);  //文本编辑区默认自动换行
+        
+        DecryptionText = new JTextArea(7, 55);  //解密文本文本区
+        DecryptionText.setWrapStyleWord(true);  //文字长度超过一行时自动换行
+        DecryptionText.setLineWrap(true);  //文本编辑区默认自动换行
+
+        //按钮
+        JButton Encryption = new JButton("加密");  
+        JButton Decryption = new JButton("解密");
+        JButton Help = new JButton("帮助");  
+        Encryption.setPreferredSize(new Dimension(110, 22));   
+        Decryption.setPreferredSize(new Dimension(110, 22));
+        Help.setPreferredSize(new Dimension(110, 22));
+        Encryption.addActionListener(this);
+        Encryption.addActionListener (new ActionListener() {   //添加事件监听
+            @Override  
+            public void actionPerformed(ActionEvent e) {  
+            	PlainText.requestFocus();   //定到文本编辑区
+            	DecryptionStr = PlainText.getText();    //获取明文的内容
+            	Encryption(PlainText.getText());   //加密选择
+            	if(!PlainText.getText().isEmpty()) {
+            		EncryptionText.setText(EncryptionStr);
+            	}
+            	if(PlainText.getText().isEmpty()) {
+            		EncryptionText.setText("");
+            		DecryptionText.setText("");   //将解密的内容显示到解密的文本框中
+            	}
+            }  
+        });  
+        
+        Decryption.addActionListener(new ActionListener() {   //添加事件监听
+            @Override  
+            public void actionPerformed(ActionEvent e) {  
+            	DecryptionText.requestFocus();   //定到文本编辑区
+            	if(!PlainText.getText().isEmpty()) {
+            		Decryption(EncryptionKeyStr);   //解密   EncryptionKeyStr秘钥传入进去
+            		DecryptionText.setText(JDecryptionStr);   //将解密的内容显示到解密的文本框中
+            	}
+            	if(PlainText.getText().isEmpty()) {
+            		remind();       
+            	}	
+            }  
+        }); 
+        
+        Help.addActionListener(new ActionListener() {   //添加事件监听
+            @Override  
+            public void actionPerformed(ActionEvent e) {  
+            	Help();
+            }  
+        }); 
+        
+        //下拉菜单
+        JComboBox<String> SecutityCombo = new JComboBox<>();
+        SecutityCombo.addItem("DES");
+        SecutityCombo.addItem("3DES");
+        SecutityCombo.addItem("AES");
+        SecutityCombo.setPreferredSize(new Dimension(110, 22));
+        SecutityCombo.addActionListener(new ActionListener() {  
+            @Override  
+            public void actionPerformed(ActionEvent e) {  
+                // TODO Auto-generated method stub  
+            	EncryptionAlgorithm = SecutityCombo.getItemAt(SecutityCombo.getSelectedIndex()); 
+            }  
+        });  
+        JComboBox<String> HashCombo = new JComboBox<>();
+        HashCombo.addItem("MD5");
+        HashCombo.addItem("SHA1");
+        HashCombo.addItem("SHA256");
+        HashCombo.addItem("SHA512");
+        HashCombo.setPreferredSize(new Dimension(110, 22));
+        HashCombo.addActionListener(new ActionListener() {  
+            @Override  
+            public void actionPerformed(ActionEvent e) {  
+                // TODO Auto-generated method stub  
+            	HashAlgorithm = HashCombo.getItemAt(HashCombo.getSelectedIndex()); 
+            }  
+        });
+
+        JPanel bottomPanel = new JPanel(); 
+        JPanel topPanel1 = new JPanel();
+        JPanel topPanel3 = new JPanel();
+        JPanel topPanel4 = new JPanel();
+  
+        topPanel1.add(searchContentLabel);  
+        topPanel1.add(PlainText);
+        topPanel3.add(SecurityLabel);  
+        topPanel3.add(EncryptionText);
+        topPanel4.add(JieMiLabel);  
+        topPanel4.add(DecryptionText);
+
+        bottomPanel.add(AlgorithmContentLabel);
+        bottomPanel.add(SecutityCombo);
+        bottomPanel.add(HashContentLabel);
+        bottomPanel.add(HashCombo);
+        bottomPanel.add(Encryption);
+        bottomPanel.add(Decryption);
+        bottomPanel.add(Help);
+        
+        con.add(topPanel1);
+        con.add(topPanel3);
+        con.add(topPanel4); 
+        con.add(bottomPanel); 
+      //设置图标  
+        Image img = new ImageIcon("image/logo.jpg").getImage();  
+        this.setIconImage(img);  
+      //设置标题名称  
+        this.setTitle("加密系统  by 170816");  
+	}   
+	
+	/*
+	 * 系统加密算法选择
+	 */
+	public void Encryption(String PlainAreaText) {      	
+		if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("MD5") ) {
+			//MD5 加密	 
+	        String HStr = HashUtil.string2MD5(PlainAreaText);   //MD5加密  16进制显示
+	    	
+			//RSA私钥加密
+			Map<String, String> keyMap = RSAUtil.createKeys(1024);
+			publicKey1 = keyMap.get("publicKey");
+		    privateKey1 = keyMap.get("privateKey");
+		    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+		   	
+		    //H(M)||M
+			String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+
+			//DES加密
+			byte[] byteRKA1 = DESUtil.initKey();   //产生秘钥
+			byteResult = DESUtil.encryptDES(EncryptionString.getBytes(), byteRKA1);
+			//加密后的内容
+			EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+			
+			String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+			//RSA公钥加密			
+			Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+			publicKey2 = keyMap2.get("publicKey");
+		    privateKey2 = keyMap2.get("privateKey");
+		    //对对称秘钥进行加密
+		    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文    			
+			
+		 }
+		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("MD5") ) {
+			//MD5 加密	 
+	        String HStr = HashUtil.string2MD5(PlainAreaText);   //MD5加密  16进制显示
+	    	
+			//RSA私钥加密
+			Map<String, String> keyMap = RSAUtil.createKeys(1024);
+			publicKey1 = keyMap.get("publicKey");
+		    privateKey1 = keyMap.get("privateKey");
+		    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+		   	
+		    //H(M)||M
+			String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+
+			//3DES加密
+			byte[] byteRKA1 = DESede.initKey();   //产生秘钥
+			byteResult = DESede.encrypt3DES(EncryptionString.getBytes(), byteRKA1);
+			//加密后的内容
+			EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+			
+			String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+			//RSA公钥加密			
+			Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+			publicKey2 = keyMap2.get("publicKey");
+		    privateKey2 = keyMap2.get("privateKey");
+		    //对对称秘钥进行加密
+		    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文    			
+			
+		}
+		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("MD5") ) {
+			//MD5 加密	 
+	        String HStr = HashUtil.string2MD5(PlainAreaText);   //MD5加密  16进制显示
+	    	
+			//RSA私钥加密
+			Map<String, String> keyMap = RSAUtil.createKeys(1024);
+			publicKey1 = keyMap.get("publicKey");
+		    privateKey1 = keyMap.get("privateKey");
+		    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+		   	
+		    //H(M)||M
+			String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+
+			//AES加密
+			byte[] byteRKA1 = AESUtil.initKey();   //产生秘钥
+			byteResult = AESUtil.encryptAES(EncryptionString.getBytes(), byteRKA1);
+			//加密后的内容
+			EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+			
+			String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+			//RSA公钥加密			
+			Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+			publicKey2 = keyMap2.get("publicKey");
+		    privateKey2 = keyMap2.get("privateKey");
+		    //对对称秘钥进行加密
+		    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文 
+		    
+		}
+		else if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("SHA1") ) {
+			//SHA1 加密	 
+	        String HStr = HashUtil.SHA1(PlainAreaText);   //MD5加密  16进制显示
+	    	
+			//RSA私钥加密
+			Map<String, String> keyMap = RSAUtil.createKeys(1024);
+			publicKey1 = keyMap.get("publicKey");
+		    privateKey1 = keyMap.get("privateKey");
+		    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+		   	
+		    //H(M)||M
+			String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+
+			//DES加密
+			byte[] byteRKA1 = DESUtil.initKey();   //产生秘钥
+			byteResult = DESUtil.encryptDES(EncryptionString.getBytes(), byteRKA1);
+			//加密后的内容
+			EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+			
+			String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+			//RSA公钥加密			
+			Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+			publicKey2 = keyMap2.get("publicKey");
+		    privateKey2 = keyMap2.get("privateKey");
+		    //对对称秘钥进行加密
+		    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文    			
+			
+		}
+		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("SHA1") ) {
+			//SHA1 加密	 
+	        String HStr = HashUtil.SHA1(PlainAreaText);   //MD5加密  16进制显示
+	    	
+			//RSA私钥加密
+			Map<String, String> keyMap = RSAUtil.createKeys(1024);
+			publicKey1 = keyMap.get("publicKey");
+		    privateKey1 = keyMap.get("privateKey");
+		    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+		   	
+		    //H(M)||M
+			String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+
+			//3DES加密
+			byte[] byteRKA1 = DESede.initKey();   //产生秘钥
+			byteResult = DESede.encrypt3DES(EncryptionString.getBytes(), byteRKA1);
+			//加密后的内容
+			EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+			
+			String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+			//RSA公钥加密			
+			Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+			publicKey2 = keyMap2.get("publicKey");
+		    privateKey2 = keyMap2.get("privateKey");
+		    //对对称秘钥进行加密
+		    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文    			
+			
+		}
+		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("SHA1") ) {
+			//SHA1 加密	 
+	        String HStr = HashUtil.SHA1(PlainAreaText);   //MD5加密  16进制显示
+	    	
+			//RSA私钥加密
+			Map<String, String> keyMap = RSAUtil.createKeys(1024);
+			publicKey1 = keyMap.get("publicKey");
+		    privateKey1 = keyMap.get("privateKey");
+		    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+		   	
+		    //H(M)||M
+			String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+
+			//AES加密
+			byte[] byteRKA1 = AESUtil.initKey();   //产生秘钥
+			byteResult = AESUtil.encryptAES(EncryptionString.getBytes(), byteRKA1);
+			//加密后的内容
+			EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+			
+			String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+			//RSA公钥加密			
+			Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+			publicKey2 = keyMap2.get("publicKey");
+		    privateKey2 = keyMap2.get("privateKey");
+		    //对对称秘钥进行加密
+		    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文 
+		    
+		}
+		else if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("SHA256") ) {
+			//SHA256 加密	 
+	        String HStr = HashUtil.SHA256(PlainAreaText);   //MD5加密  16进制显示
+	    	
+			//RSA私钥加密
+			Map<String, String> keyMap = RSAUtil.createKeys(1024);
+			publicKey1 = keyMap.get("publicKey");
+		    privateKey1 = keyMap.get("privateKey");
+		    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+		   	
+		    //H(M)||M
+			String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+
+			//DES加密
+			byte[] byteRKA1 = DESUtil.initKey();   //产生秘钥
+			byteResult = DESUtil.encryptDES(EncryptionString.getBytes(), byteRKA1);
+			//加密后的内容
+			EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+			
+			String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+			//RSA公钥加密			
+			Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+			publicKey2 = keyMap2.get("publicKey");
+		    privateKey2 = keyMap2.get("privateKey");
+		    //对对称秘钥进行加密
+		    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文    			
+			
+		}
+		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("SHA256") ) {
+			//SHA256 加密	 
+	        String HStr = HashUtil.SHA256(PlainAreaText);   //MD5加密  16进制显示
+	    	
+			//RSA私钥加密
+			Map<String, String> keyMap = RSAUtil.createKeys(1024);
+			publicKey1 = keyMap.get("publicKey");
+		    privateKey1 = keyMap.get("privateKey");
+		    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+		   	
+		    //H(M)||M
+			String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+
+			//3DES加密
+			byte[] byteRKA1 = DESede.initKey();   //产生秘钥
+			byteResult = DESede.encrypt3DES(EncryptionString.getBytes(), byteRKA1);
+			//加密后的内容
+			EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+			
+			String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+			//RSA公钥加密			
+			Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+			publicKey2 = keyMap2.get("publicKey");
+		    privateKey2 = keyMap2.get("privateKey");
+		    //对对称秘钥进行加密
+		    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文
+		    
+		}
+		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("SHA256") ) {
+			//SHA256 加密	 
+	        String HStr = HashUtil.SHA256(PlainAreaText);   //MD5加密  16进制显示
+	    	
+			//RSA私钥加密
+			Map<String, String> keyMap = RSAUtil.createKeys(1024);
+			publicKey1 = keyMap.get("publicKey");
+		    privateKey1 = keyMap.get("privateKey");
+		    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+		   	
+		    //H(M)||M
+			String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+
+			//AES加密
+			byte[] byteRKA1 = AESUtil.initKey();   //产生秘钥
+			byteResult = AESUtil.encryptAES(EncryptionString.getBytes(), byteRKA1);
+			//加密后的内容
+			EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+			
+			String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+			//RSA公钥加密			
+			Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+			publicKey2 = keyMap2.get("publicKey");
+		    privateKey2 = keyMap2.get("privateKey");
+		    //对对称秘钥进行加密
+		    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文 
+		    
+		}
+		else if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("SHA512") ) {
+			//SHA512 加密	 
+	        String HStr = HashUtil.SHA512(PlainAreaText);   //MD5加密  16进制显示
+	    	
+			//RSA私钥加密
+			Map<String, String> keyMap = RSAUtil.createKeys(1024);
+			publicKey1 = keyMap.get("publicKey");
+		    privateKey1 = keyMap.get("privateKey");
+		    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+		   	
+		    //H(M)||M
+			String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+
+			//DES加密
+			byte[] byteRKA1 = DESUtil.initKey();   //产生秘钥
+			byteResult = DESUtil.encryptDES(EncryptionString.getBytes(), byteRKA1);
+			//加密后的内容
+			EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+			
+			String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+			//RSA公钥加密			
+			Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+			publicKey2 = keyMap2.get("publicKey");
+		    privateKey2 = keyMap2.get("privateKey");
+		    //对对称秘钥进行加密
+		    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文    			
+			
+		}
+		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("SHA512") ) {
+			//SHA512 加密	 
+	        String HStr = HashUtil.SHA512(PlainAreaText);   //MD5加密  16进制显示
+	    	
+			//RSA私钥加密
+			Map<String, String> keyMap = RSAUtil.createKeys(1024);
+			publicKey1 = keyMap.get("publicKey");
+		    privateKey1 = keyMap.get("privateKey");
+		    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+		   	
+		    //H(M)||M
+			String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+
+			//3DES加密
+			byte[] byteRKA1 = DESede.initKey();   //产生秘钥
+			byteResult = DESede.encrypt3DES(EncryptionString.getBytes(), byteRKA1);
+			//加密后的内容
+			EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+			
+			String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+			//RSA公钥加密			
+			Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+			publicKey2 = keyMap2.get("publicKey");
+		    privateKey2 = keyMap2.get("privateKey");
+		    //对对称秘钥进行加密
+		    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文
+		}
+		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("SHA512") ) {
+			//SHA512 加密	 
+	        String HStr = HashUtil.SHA512(PlainAreaText);   //MD5加密  16进制显示
+	    	
+			//RSA私钥加密
+			Map<String, String> keyMap = RSAUtil.createKeys(1024);
+			publicKey1 = keyMap.get("publicKey");
+		    privateKey1 = keyMap.get("privateKey");
+		    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+		   	
+		    //H(M)||M
+			String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+
+			//AES加密
+			byte[] byteRKA1 = AESUtil.initKey();   //产生秘钥
+			byteResult = AESUtil.encryptAES(EncryptionString.getBytes(), byteRKA1);
+			//加密后的内容
+			EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+			
+			String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+			//RSA公钥加密			
+			Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+			publicKey2 = keyMap2.get("publicKey");
+		    privateKey2 = keyMap2.get("privateKey");
+		    //对对称秘钥进行加密
+		    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文 
+		    
+		}
+	}
+	
+	/*
+	 * 系统解密算法选择
+	 */
+	public void Decryption(String EncryptionAreaText) {
+		if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("MD5") ) {
+			try {
+				
+				///RSA解密出DES的秘钥
+				String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+
+				//DES 解密
+				byte[] plain1 = DESUtil.decryptDES(byteResult,BytesAndHex.fromHexToBytes( StrKey));				
+				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+				String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文
+				//解密的明文
+				String JDecryptionString = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+							
+				//RSA解密hash(m)
+				String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+				
+				//HASH加密
+				String EnHmStr  = HashUtil.string2MD5(JDecryptionString);   //MD5加密  16进制显示
+							
+				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+					JDecryptionStr = JDecryptionString;   //将解密信息传入
+				}				
+			} catch(NullPointerException N) {
+				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+			}
+		}
+		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("MD5") ) {
+			try {				
+				///RSA私钥解密出3DES的秘钥
+				String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+
+				//3DES 解密
+				byte[] plain1 = DESede.decrypt3DES(byteResult,BytesAndHex.fromHexToBytes( StrKey));				
+				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+				String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文
+				//解密的明文
+				String JDecryptionString = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+							
+				//RSA解密hash(m)
+				String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+				
+				//HASH加密
+				String EnHmStr  = HashUtil.string2MD5(JDecryptionString);   //MD5加密  16进制显示
+							
+				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+					JDecryptionStr = JDecryptionString;   //将解密信息传入
+				}				
+			} catch(NullPointerException N) {
+				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+			}
+			
+		}
+		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("MD5") ) {
+			try {				
+				///RSA私钥解密出AES的秘钥
+				String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+
+				//AES 解密
+				byte[] plain1 = AESUtil.decryptAES(byteResult,BytesAndHex.fromHexToBytes( StrKey));				
+				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+				String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文
+				//解密的明文
+				String JDecryptionString = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+							
+				//RSA解密hash(m)
+				String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+				
+				//HASH加密
+				String EnHmStr  = HashUtil.string2MD5(JDecryptionString);   //MD5加密  16进制显示
+							
+				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+					JDecryptionStr = JDecryptionString;   //将解密信息传入
+				}				
+			} catch(NullPointerException N) {
+				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+			}
+		}
+		else if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("SHA1") ) {
+			try {				
+				///RSA私钥解密出DES的秘钥
+				String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+
+				//DES 解密
+				byte[] plain1 = DESUtil.decryptDES(byteResult,BytesAndHex.fromHexToBytes( StrKey));				
+				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+				String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文
+				//解密的明文
+				String JDecryptionString = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+							
+				//RSA解密hash(m)
+				String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+				
+				//HASH加密
+				String EnHmStr  = HashUtil.SHA1(JDecryptionString);   //MD5加密  16进制显示
+							
+				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+					JDecryptionStr = JDecryptionString;   //将解密信息传入
+				}				
+			} catch(NullPointerException N) {
+				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+			}
+		}
+		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("SHA1") ) {
+			try {				
+				///RSA私钥解密出3DES的秘钥
+				String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+
+				//3DES 解密
+				byte[] plain1 = DESede.decrypt3DES(byteResult,BytesAndHex.fromHexToBytes( StrKey));				
+				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+				String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文
+				//解密的明文
+				String JDecryptionString = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+							
+				//RSA解密hash(m)
+				String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+				
+				//HASH加密
+				String EnHmStr  = HashUtil.SHA1(JDecryptionString);   //MD5加密  16进制显示
+							
+				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+					JDecryptionStr = JDecryptionString;   //将解密信息传入
+				}				
+			} catch(NullPointerException N) {
+				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+			}
+		}
+		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("SHA1") ) {
+			try {				
+				///RSA私钥解密出AES的秘钥
+				String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+
+				//AES 解密
+				byte[] plain1 = AESUtil.decryptAES(byteResult,BytesAndHex.fromHexToBytes( StrKey));				
+				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+				String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文
+				//解密的明文
+				String JDecryptionString = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+							
+				//RSA解密hash(m)
+				String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+				
+				//HASH加密
+				String EnHmStr  = HashUtil.SHA1(JDecryptionString);   //MD5加密  16进制显示
+							
+				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+					JDecryptionStr = JDecryptionString;   //将解密信息传入
+				}				
+			} catch(NullPointerException N) {
+				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+			}
+		}
+		else if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("SHA256") ) {
+			try {				
+				///RSA私钥解密出DES的秘钥
+				String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+
+				//DES 解密
+				byte[] plain1 = DESUtil.decryptDES(byteResult,BytesAndHex.fromHexToBytes( StrKey));				
+				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+				String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文
+				//解密的明文
+				String JDecryptionString = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+							
+				//RSA解密hash(m)
+				String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+				
+				//HASH加密
+				String EnHmStr  = HashUtil.SHA256(JDecryptionString);   //MD5加密  16进制显示
+							
+				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+					JDecryptionStr = JDecryptionString;   //将解密信息传入
+				}				
+			} catch(NullPointerException N) {
+				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+			}
+		}
+		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("SHA256") ) {
+			try {			
+				///RSA私钥解密出3DES的秘钥
+				String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+
+				//3DES 解密
+				byte[] plain1 = DESede.decrypt3DES(byteResult,BytesAndHex.fromHexToBytes( StrKey));				
+				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+				String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文
+				//解密的明文
+				String JDecryptionString = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+							
+				//RSA解密hash(m)
+				String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+				
+				//HASH加密
+				String EnHmStr  = HashUtil.SHA256(JDecryptionString);   //MD5加密  16进制显示
+							
+				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+					JDecryptionStr = JDecryptionString;   //将解密信息传入
+				}				
+			} catch(NullPointerException N) {
+				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+			}
+		}
+		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("SHA256") ) {
+			try {				
+				///RSA私钥解密出AES的秘钥
+				String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+
+				//AES 解密
+				byte[] plain1 = AESUtil.decryptAES(byteResult,BytesAndHex.fromHexToBytes( StrKey));				
+				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+				String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文
+				//解密的明文
+				String JDecryptionString = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+							
+				//RSA解密hash(m)
+				String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+				
+				//HASH加密
+				String EnHmStr  = HashUtil.SHA256(JDecryptionString);   //MD5加密  16进制显示
+							
+				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+					JDecryptionStr = JDecryptionString;   //将解密信息传入
+				}				
+			} catch(NullPointerException N) {
+				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+			}
+		}
+		else if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("SHA512") ) {
+			try {				
+				///RSA私钥解密出DES的秘钥
+				String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+
+				//DES 解密
+				byte[] plain1 = DESUtil.decryptDES(byteResult,BytesAndHex.fromHexToBytes( StrKey));				
+				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+				String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文
+				//解密的明文
+				String JDecryptionString = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+							
+				//RSA解密hash(m)
+				String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+				
+				//HASH加密
+				String EnHmStr  = HashUtil.SHA512(JDecryptionString);   //MD5加密  16进制显示
+							
+				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+					JDecryptionStr = JDecryptionString;   //将解密信息传入
+				}				
+			} catch(NullPointerException N) {
+				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+			}
+		}
+		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("SHA512") ) {
+			try {
+				///RSA私钥解密出3DES的秘钥
+				String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+
+				//3DES 解密
+				byte[] plain1 = DESede.decrypt3DES(byteResult,BytesAndHex.fromHexToBytes( StrKey));				
+				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+				String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文
+				//解密的明文
+				String JDecryptionString = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+							
+				//RSA解密hash(m)
+				String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+				
+				//HASH加密
+				String EnHmStr  = HashUtil.SHA512(JDecryptionString);   //MD5加密  16进制显示
+							
+				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+					JDecryptionStr = JDecryptionString;   //将解密信息传入
+				}				
+			} catch(NullPointerException N) {
+				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+			}
+		}
+		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("SHA512") ) {
+			try {	
+				///RSA私钥解密出AES的秘钥
+				String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+
+				//AES 解密
+				byte[] plain1 = AESUtil.decryptAES(byteResult,BytesAndHex.fromHexToBytes( StrKey));				
+				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+				String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文
+				//解密的明文
+				String JDecryptionString = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+							
+				//RSA解密hash(m)
+				String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+				
+				//HASH加密
+				String EnHmStr  = HashUtil.SHA512(JDecryptionString);   //MD5加密  16进制显示
+							
+				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+					JDecryptionStr = JDecryptionString;   //将解密信息传入
+				}				
+			} catch(NullPointerException N) {
+				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+			}
+		}
+	}
+	public void Help() {
+		JOptionPane.showMessageDialog(this, "*****************************************\n"
+				+ "* 密码使用秘钥工厂方式自送生成  *\n"
+				+ "*(H(m)||m)加密的密文16进制显示*\n"
+				+ "*****************************************", "帮助", JOptionPane.QUESTION_MESSAGE);
+	}
+	
+
+	public void remind() {
+		JOptionPane.showConfirmDialog(this, "未输入加密内容", "提示", JOptionPane.WARNING_MESSAGE);
+	}
+	
+	public void initMenu() {
+		JMenuBar menuBar = new JMenuBar();  //创建一个菜单栏
+		setJMenuBar(menuBar);  //将菜单栏添加到框架上
+
+		//创建文件菜单
+		fileMenu = new JMenu("文件(F)");
+		fileMenu.setMnemonic('F');  //设置快捷键Alt+F
+		menuBar.add(fileMenu);
+		
+		fileNew = new JMenuItem("新建(N)");  //新建菜单项
+		//设置快捷键
+		fileNew.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_N, ActionEvent.CTRL_MASK));
+		fileNew.addActionListener(this);  //添加事件监听
+		fileMenu.add(fileNew);   //添加菜单项
+		
+		fileOpen = new JMenuItem("打开(O)");
+		fileOpen.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_O, ActionEvent.CTRL_MASK));
+		fileOpen.addActionListener(this);
+		fileMenu.add(fileOpen);
+		
+		fileSave = new JMenuItem("保存(S)");
+		fileSave.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_S, ActionEvent.CTRL_MASK));
+		fileSave.addActionListener(this);
+		fileMenu.add(fileSave);
+		
+		fileSaveAs = new JMenuItem("另存为(A)...");
+		fileSaveAs.addActionListener(this);
+		fileMenu.add(fileSaveAs);
+		fileMenu.addSeparator();
+		
+		filePageSet = new JMenuItem("页面设置(U)...");
+		filePageSet.addActionListener(this);
+		fileMenu.add(filePageSet);
+		
+		filePrint = new JMenuItem("打印(P)");
+		filePrint.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_P, ActionEvent.CTRL_MASK));
+		filePrint.addActionListener(this);
+		fileMenu.add(filePrint);
+		fileMenu.addSeparator();
+		
+		fileExit = new JMenuItem("退出“X");
+		fileExit.addActionListener(this);
+		fileMenu.add(fileExit);
+		
+		//创建编辑菜单
+		editMenu = new JMenu("编辑(E)");
+		editMenu.setMnemonic('E');
+		menuBar.add(editMenu);
+		
+		//当选择编辑菜单时，设置剪切、复制、粘贴、删除等功能的可用性  
+		editMenu.addMenuListener(new MenuListener(){
+			public void menuCanceled(MenuEvent e) {  //当取消菜单的时候调用
+				checkMenuItemEnabled();   //设置功能的可用性    
+			}
+			public void menuDeselected(MenuEvent e) { //当取消选择某个菜单时选择使用
+				checkMenuItemEnabled();
+			}
+			public void menuSelected(MenuEvent e) {  //当选择某个菜单时调用
+				checkMenuItemEnabled();
+			}
+		});
+		
+		editUndo = new JMenuItem("撤销(U)");
+		editUndo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_U, ActionEvent.CTRL_MASK));
+		editUndo.addActionListener(this);
+		editUndo.setEnabled(false);  //设置没有写入文字之前不可用
+		editMenu.add(editUndo);
+		
+		editCut = new JMenuItem("剪切(T)");
+		editCut.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_X, ActionEvent.CTRL_MASK));
+		editCut.addActionListener(this);
+		editCut.setEnabled(false);
+		editMenu.add(editCut);
+		
+		editCopy = new JMenuItem("复制(C)");
+		editCopy.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_C, ActionEvent.CTRL_MASK));
+		editCopy.addActionListener(this);
+		editCopy.setEnabled(false);
+		editMenu.add(editCopy);
+		
+		editPaste = new JMenuItem("粘贴(P)");
+		editPaste.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_V, ActionEvent.CTRL_MASK));
+		editPaste.addActionListener(this);
+		editPaste.setEnabled(false);
+		editMenu.add(editPaste);
+		
+		editDelete = new JMenuItem("删除(L)");
+		editDelete.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_DELETE, 0));
+		editDelete.addActionListener(this);
+		editMenu.add(editDelete);
+		editMenu.addSeparator();
+		
+		editFind = new JMenuItem("查找(F)");
+		editFind.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F, ActionEvent.CTRL_MASK));
+		editFind.addActionListener(this);
+		editMenu.add(editFind);
+		
+		editFindNext = new JMenuItem("查找下一个(N)");
+		editFindNext.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F3, 0));
+		editFindNext.addActionListener(this);
+		editMenu.add(editFindNext);
+		
+		editReplace = new JMenuItem("替换(R)...");
+		editReplace.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_H, ActionEvent.CTRL_MASK));
+		editReplace.addActionListener(this);
+		editMenu.add(editReplace);
+		
+		editGoTo = new JMenuItem("转到(G)...");
+		editGoTo.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_G, ActionEvent.CTRL_MASK));
+		editGoTo.addActionListener(this);
+		editMenu.add(editGoTo);
+		editMenu.addSeparator();
+		
+		editSelectAll = new JMenuItem("全选(A)");
+		editSelectAll.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_A, ActionEvent.CTRL_MASK));
+		editSelectAll.addActionListener(this);
+		editMenu.add(editSelectAll);
+		
+		editDate = new JMenuItem("时间/日期(D)");
+		editDate.setAccelerator(KeyStroke.getKeyStroke(KeyEvent.VK_F5, 0));
+		editDate.addActionListener(this);
+		editMenu.add(editDate);
+		
+		//创建格式菜单
+		formatMenu = new JMenu("格式(O)");
+		formatMenu.setMnemonic('O');
+		menuBar.add(formatMenu);
+		
+		formatLineWrap = new JCheckBoxMenuItem("自动换行(W)");
+		formatLineWrap.setMnemonic('W');
+		formatLineWrap.setState(true);
+		formatLineWrap.addActionListener(this);
+		formatMenu.add(formatLineWrap);
+		
+		formatFont = formatMenu.add(new JMenuItem("字体(F)"));
+		formatFont.addActionListener(this);
+		
+		formatBackGround = formatMenu.add(new JMenuItem("背景(B)"));
+		formatBackGround.addActionListener(this);
+		
+		formatFontColor = formatMenu.add(new JMenuItem("字体颜色(F)"));
+		formatFontColor.addActionListener(this);
+				
+		
+		//创建查看菜单
+		viewMenu = menuBar.add(new JMenu("查看(V)"));
+		viewMenu.setMnemonic('V');
+		
+		stateItem = new JCheckBoxMenuItem("状态栏(S)");  //状态栏一开始就被选中
+		stateItem.setState(true);
+		stateItem.addActionListener(this);
+		viewMenu.add(stateItem);
+	
+		
+		//创建帮助菜单
+		helpMenu =menuBar.add( new JMenu("帮助(H)"));
+		helpMenu.setMnemonic('H');
+		
+		lookHelp = helpMenu.add(new JMenuItem("查看帮助(H)"));
+		lookHelp.addActionListener(this);
+		helpMenu.addSeparator();
+		
+		aboutNote = helpMenu.add(new JMenuItem("关于加密系统(A)"));
+		aboutNote.addActionListener(this);
+	}
+	
+	//初始化文本编辑区
+	public void initTextEditArea(JTextArea area) {
+		//创建文本编辑区
+		editArea = area;
+		oldText = editArea.getText();   //获取文本编辑区的内容
+		//撤销动作添加事件监听
+		editArea.getDocument().addUndoableEditListener(undoHandler);
+		editArea.getDocument().addDocumentListener(this);
+		
+		//创建右键弹出菜单
+		popupMenu = new JPopupMenu();
+		
+		popupMenuUndo = new JMenuItem("撤销(U)");
+		popupMenuUndo.addActionListener(this);
+		popupMenuUndo.setEnabled(false);   
+		popupMenu.add(popupMenuUndo);
+		popupMenu.addSeparator();
+		
+		popupMenuCut = new JMenuItem("剪切(T)");
+		popupMenuCut.addActionListener(this);
+		popupMenu.add(popupMenuCut);
+		
+		popupMenuCopy = new JMenuItem("复制(C)");
+		popupMenuCopy.addActionListener(this);
+		popupMenu.add(popupMenuCopy);
+		
+		popupMenuPaste = new JMenuItem("粘贴(P)");
+		popupMenuPaste.addActionListener(this);
+		popupMenu.add(popupMenuPaste);
+		
+		popupMenuDelete = new JMenuItem("删除(D)");
+		popupMenuDelete.addActionListener(this);
+		popupMenu.add(popupMenuDelete);
+		popupMenu.addSeparator();
+		
+		popupMenuSelectAll = new JMenuItem("全选(A)");
+		popupMenuSelectAll.addActionListener(this);
+		popupMenu.add(popupMenuSelectAll);
+		
+		//文本编辑区注册鼠标右键事件  //mouse必须写两遍，因为点击释放两个状态
+		editArea.addMouseListener(new MouseAdapter() {
+			public void mousePressed(MouseEvent e) {
+				if(e.isPopupTrigger()) {    //判断是否是编辑区触发的鼠标右键事件,弹出菜单触发器
+					popupMenu.show(e.getComponent(), e.getX(), e.getY());  //在组件调用者的坐标空间中的位置 X、Y 显示弹出菜单
+				}
+				checkMenuItemEnabled();   //设置菜单功能的可用性    
+				editArea.requestFocus();  //编辑区获取焦点
+			}
+			public void mouseReleased(MouseEvent e) {
+				if(e.isPopupTrigger()) {    //判断是否是编辑区触发的鼠标右键事件,弹出菜单触发器
+					popupMenu.show(e.getComponent(), e.getX(), e.getY());  //在组件调用者的坐标空间中的位置 X、Y 显示弹出菜单
+				}
+				checkMenuItemEnabled();   //设置菜单功能的可用性    
+				editArea.requestFocus();  //编辑区获取焦点
+			}
+		});
+		//component.setComponentPopupMenu(popupMenu);
+		
+		//创建和添加状态栏
+		JPanel panel1 = new JPanel();
+		statusLabel1 = new JLabel("");
+		statusLabel2 = new JLabel("文件状态");
+		
+		panel1.add(statusLabel1);
+		panel1.add(statusLabel2);  
+		
+		this.add(panel1, BorderLayout.SOUTH);//向窗口添加状态栏标签  
+		
+		//添加窗口监听器
+		addWindowListener(new WindowAdapter() {
+			public void windowClosing(WindowEvent e) {
+				exitWindowChoose();
+			}
+		});
+		
+		checkMenuItemEnabled();
+		editArea.requestFocus();
+				
+	}
+	
+	//监听各个动作的实现
+	public void actionPerformed(ActionEvent e) {  
+		//***********************************文件菜单栏功能************************************//
+		//新建文本功能
+		String currentText = editArea.getText();   //获取当前文本中的内容
+		boolean isTextChange = (currentText.equals(oldText))?true:false;;   //用来判断文本内容是否发生变化
+		if(e.getSource() == fileNew) {
+			if(!isTextChange) {    //文本内容发生变化
+				int saveChoose = JOptionPane.showConfirmDialog(this,"文件尚未保存，是否保存？", "提示", JOptionPane.YES_NO_CANCEL_OPTION);
+				if(saveChoose == JOptionPane.YES_OPTION) {
+					saveAs();
+				}
+				else if(saveChoose == JOptionPane.NO_OPTION) {
+					fileNew();   //新建文本
+					//return;
+				}
+				else {
+					statusLabel2.setText("未选择保存任何文件");
+					return;
+				}	
+			}
+			else {
+				fileNew();
+			}
+		}
+		//打开文件功能
+		else if(e.getSource() == fileOpen) {
+			
+			if(!isTextChange) {
+				int saveChoose = JOptionPane.showConfirmDialog(this, "文件尚未保存，是否保存", "提示", JOptionPane.YES_NO_CANCEL_OPTION);
+				if(saveChoose == JOptionPane.YES_OPTION) {
+					saveAs();
+				}
+				else if(saveChoose == JOptionPane.NO_OPTION) {
+					statusLabel2.setText("未选择保存任何文件");
+					fileOpen();
+				}
+				else {
+					return;
+				}
+			}
+			else {
+				fileOpen();
+			}
+		}
+		//文件保存
+		else if(e.getSource() == fileSave) {
+			if(isNewFile) {
+				saveNewFile();
+			}
+			else {
+				saveNotNewFile();
+			}
+		}
+		//文件另存为
+		else if(e.getSource() == fileSaveAs) {
+			saveAs();
+		}
+		//页面设置
+		else if(e.getSource() == filePageSet) {
+			//JOptionPane.showConfirmDialog(this, "页面设置功能待实现", "提示", JOptionPane.WARNING_MESSAGE);
+			 PageFormat pf = new PageFormat();  
+	         PrinterJob.getPrinterJob().pageDialog(pf);
+		}
+		//打印功能
+		else if(e.getSource() == filePrint) {
+			print();
+		}
+		//退出功能
+		else if(e.getSource() == fileExit ){
+			exitWindowChoose(); 
+		}
+		
+		//*******************************编辑菜单栏功能实现************************************************//
+		//撤销功能
+		else if(e.getSource() == editUndo || e.getSource() == popupMenuUndo) {
+			if(undo.canUndo()) {     //如果撤销可用
+				try {
+					undo.undo();
+				}catch(CannotUndoException cux) {
+					System.out.println("Unable to undo" + cux);
+				}
+			}
+			else {         //当撤销不可用时，将该功能禁用
+				editUndo.setEnabled(false);
+				popupMenuUndo.setEnabled(false);
+			}
+		}
+		//剪切功能
+		else if(e.getSource() == editCut || e.getSource() == popupMenuCut) {
+			String text = editArea.getSelectedText();
+			StringSelection selection = new StringSelection(text);
+			clipBoard.setContents(selection, null);  //将选中的文本添加到系统剪贴板
+			editArea.replaceRange("", editArea.getSelectionStart(), editArea.getSelectionEnd());   //将文本中的从start到end的内容替换
+			checkMenuItemEnabled();  //检查此时功能的可用性
+		}
+		//复制功能
+		else if(e.getSource() == editCopy || e.getSource() == popupMenuCopy) {
+			String text = editArea.getSelectedText();
+			StringSelection selection = new StringSelection(text);
+			clipBoard.setContents(selection, null);
+			checkMenuItemEnabled();
+		}
+		//粘贴功能
+		else if(e.getSource() == editPaste || e.getSource() == popupMenuPaste) {
+			Transferable contents = clipBoard.getContents(this);   //获取粘贴板上的内容
+			if(contents == null) {
+				return;
+			}
+			String text = "";
+			try {
+				text = (String) contents.getTransferData(DataFlavor.stringFlavor);  //表示 Java Unicode String 类  
+			}catch(Exception ex) {
+				ex.printStackTrace();
+			}
+			editArea.replaceRange(text, editArea.getSelectionStart(), editArea.getSelectionEnd());
+			checkMenuItemEnabled();
+		}
+		//删除功能
+		else if(e.getSource() == editDelete || e.getSource() == popupMenuDelete) {
+			editArea.replaceRange("", editArea.getSelectionStart(), editArea.getSelectionEnd());
+			checkMenuItemEnabled();
+		}
+		//查找功能
+		else if(e.getSource() == editFind) {
+			find();
+		}
+		//查找下一个
+		else if(e.getSource() == editFindNext) {
+			find();
+		}
+		//替换功能
+		else if(e.getSource() == editReplace) {
+			replace();
+		}
+		//转到功能
+		else if(e.getSource() == editGoTo) {
+			turnTo();
+		}
+		//全选功能
+		else if(e.getSource() == editSelectAll || e.getSource()==popupMenuSelectAll) {
+			editArea.selectAll();
+		}
+		//日期功能
+		else if(e.getSource() == editDate) {
+			Calendar now = Calendar.getInstance();
+			Date date = now.getTime();
+			editArea.insert(date.toString(), editArea.getCaretPosition());         //获取当前文本编辑区的位置并插入
+		}
+		//*****************************格式栏菜单选项功能实现****************************************************//
+		//自动换行
+		else if(e.getSource() == formatLineWrap) {
+			if(formatLineWrap.getState()) {
+				editArea.setLineWrap(true);
+			}
+			else {
+				editArea.setLineWrap(false);
+			}
+		}
+		//字体设置
+		else if(e.getSource() == formatFont) {
+			MyFont font = new MyFont(editArea.getFont());
+			int returnValue = font.showFontDialog(this);
+			if(returnValue == font.APPROVE_OPTION) {
+				Font f = font.getSelectFont();
+				editArea.setFont(f);
+			}
+			else {
+				statusLabel2.setText("未选择新字体");
+				return;
+			}
+		}
+		//背景色设置
+		else if(e.getSource() == formatBackGround) {
+			Color color = JColorChooser.showDialog(this, "颜色选择", Color.BLACK);
+			editArea.setBackground(color);
+		}
+		//字体颜色设置
+		else if(e.getSource() == formatFontColor) {
+			Color color = JColorChooser.showDialog(this, "颜色选择", Color.BLACK);
+			editArea.setForeground(color);
+		}
+		//********************************查看菜单栏功能的实现**************************************************//
+		//状态栏
+		else if (e.getSource()== stateItem) {  
+            if(stateItem.getState()){  
+                statusLabel1.setVisible(true);  
+                statusLabel2.setVisible(true);  
+            }    
+            else{  
+                statusLabel1.setVisible(false);  
+                statusLabel2.setVisible(false);  
+            }     
+        }
+		//*********************************帮助菜单栏选项功能的实现***********************************************//
+		//查看帮助
+		else if(e.getSource() == lookHelp) {
+			JOptionPane.showConfirmDialog(this, "没什么能帮助的，人生在世还得靠自己", "提示", JOptionPane.WARNING_MESSAGE);
+		}
+		//关于记事本
+		else if(e.getSource() == aboutNote) {
+			JOptionPane.showMessageDialog(this, "******************************\n"
+					+ "* Created by Wilson song *\n"
+					+ "*            2018-05-22             *\n"
+					+ "******************************", "哒哒", JOptionPane.QUESTION_MESSAGE);
+		}
+		
+		else if(DecryptionStr.isEmpty()) {
+			JOptionPane.showConfirmDialog(this, "未输入加密内容", "提示", JOptionPane.WARNING_MESSAGE);
+		}
+		
+	}
+	
+	public void removeUpdate(DocumentEvent r) {
+		editUndo.setEnabled(true);
+		popupMenuUndo.setEnabled(true);
+	}
+	
+	public void changedUpdate(DocumentEvent c) {
+		editUndo.setEnabled(true);
+		popupMenuUndo.setEnabled(true);
+	}
+	
+	public void insertUpdate(DocumentEvent i) {
+		editUndo.setEnabled(true);
+		popupMenuUndo.setEnabled(true);
+		
+	}
+	
+	//设置菜单项的可用性
+	public void checkMenuItemEnabled() {
+		//复制粘贴删除功能
+		String selectText = editArea.getSelectedText();
+		if(selectText == null) {
+			editCut.setEnabled(false);
+			editCopy.setEnabled(false);
+			editDelete.setEnabled(false);
+			
+			popupMenuCopy.setEnabled(false);
+			popupMenuCut.setEnabled(false);
+			popupMenuDelete.setEnabled(false);
+		}
+		else {
+			editCut.setEnabled(true);
+			editCopy.setEnabled(true);
+			editDelete.setEnabled(true);
+			
+			popupMenuCopy.setEnabled(true);
+			popupMenuCut.setEnabled(true);
+			popupMenuDelete.setEnabled(true);
+		}
+		//粘贴功能
+		Transferable contents=clipBoard.getContents(this);     //获取剪贴板的内容
+		if(contents == null) {
+			editPaste.setEnabled(false);
+			popupMenuPaste.setEnabled(false);
+		}
+		else {
+			editPaste.setEnabled(true);
+			popupMenuPaste.setEnabled(true);
+		}
+	}
+	
+	public void exitWindowChoose() {
+		editArea.requestFocus();   //定到文本编辑区
+		String currentText = editArea.getText();   //获取当前编辑区的内容
+		if(currentText.equals(oldText)) {
+			setMemory();            //保存文件的设置
+			System.exit(0);
+		}
+		else {
+			int exitChoose = JOptionPane.showConfirmDialog(this, "文件尚未保存", 
+					"退出提示", JOptionPane.YES_NO_CANCEL_OPTION);
+			if(exitChoose == JOptionPane.YES_OPTION) {
+				if(isNewFile) {
+					saveNewFile();
+				}
+				else {
+					saveNotNewFile();
+				}
+				setMemory();
+				System.exit(0);
+			}
+			else if (exitChoose == JOptionPane.NO_OPTION){
+				setMemory();
+				System.exit(0);
+			}
+			else if (exitChoose == JOptionPane.CANCEL_OPTION) {
+				statusLabel2.setText("文件未保存");
+				return;
+			}
+			else {
+				return;
+			}
+		}
+	}
+	
+	//保存文件的设置
+	public  void setMemory() {
+		Properties size = new Properties();
+		size.setProperty("x", this.getBounds().x + "");
+		size.setProperty("y", this.getBounds().y + "");
+		size.setProperty("width", this.getBounds().width + "");
+		size.setProperty("height", this.getBounds().height + "");
+		size.setProperty("fontName", this.editArea.getFont().getFamily() + "");
+		size.setProperty("fontStyle", this.editArea.getFont().getStyle() + "");
+		size.setProperty("fontSize", this.editArea.getFont().getSize() + "");
+		size.setProperty("foreGround", this.editArea.getForeground() + "");
+		size.setProperty("backGround", this.editArea.getBackground() + "");
+		
+		FileWriter fr;
+		try {
+			fr = new FileWriter("src/size.properties");
+			size.store(fr, "Size Info");
+			fr.close();
+		} catch(IOException ioe){
+			ioe.printStackTrace();
+		}
+	}
+	//当新文件产生时保存新文件
+	public void saveNewFile() {
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);    //只读方式打开
+		fileChooser.setApproveButtonText("确定");
+		fileChooser.setDialogTitle("另存为");
+		
+		int result = fileChooser.showSaveDialog(this);
+		if(result == JFileChooser.CANCEL_OPTION) {
+			statusLabel2.setText("文件未保存");
+			return;
+		}
+		
+		File saveFileName = fileChooser.getSelectedFile();
+		if(saveFileName == null || saveFileName.getName().equals("")) {
+			JOptionPane.showMessageDialog(this, "错误的文件名", "错误的文件名", JOptionPane.ERROR_MESSAGE);
+		}
+		else {
+			try {        //将文件保存
+				OutputStream os = new FileOutputStream(saveFileName);   //创建文件
+				OutputStreamWriter osw = new OutputStreamWriter(os);   //OutputStreamWriter的接收类型是OutputStream，字节转换为字符流
+				PrintWriter pw = new PrintWriter(osw);  //字符输出流
+				pw.write(editArea.getText());  //获取文本编辑区中的内容并写入文本
+				pw.flush();     //将缓冲区的数据流清除
+				pw.close();    //关闭所有关联的输出串流
+				
+				isNewFile  = false;
+				currentFile = saveFileName;
+				this.setTitle(saveFileName.getName());
+				statusLabel2.setText("当前文件名为：" + saveFileName.getAbsolutePath());   //获取文件的绝对路径
+				
+			}catch(IOException ioe) {
+				ioe.printStackTrace();     //抛出异常产生的位置和原因
+			}
+		}
+	}
+	
+	//当文件内容没有发生改变时不保存新文件
+	public void saveNotNewFile() {
+		try {
+			OutputStream os = new FileOutputStream(currentFile);
+			OutputStreamWriter osw = new OutputStreamWriter(os);
+			PrintWriter pw = new PrintWriter(osw);
+			pw.write(editArea.getText());
+			pw.flush();
+			pw.close();
+		}catch(IOException ioe) {
+			ioe.printStackTrace();
+		}
+	}
+	
+	//文件另存为
+	public void saveAs() {
+		JFileChooser fileChooser = new JFileChooser();
+		fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);
+		fileChooser.setApproveButtonText("确定");
+		fileChooser.setDialogTitle("另存为");
+		
+		int result = fileChooser.showSaveDialog(this);
+		if(result == JFileChooser.CANCEL_OPTION) {
+			statusLabel2.setText("文件未保存");
+			return;
+		}
+		
+		File saveFileName = fileChooser.getSelectedFile();
+		if(saveFileName == null || saveFileName.getName().equals("")) {
+			JOptionPane.showMessageDialog(this, "错误的文件名", "错误的文件名", JOptionPane.ERROR_MESSAGE);
+		}
+		else {
+			try {
+				OutputStream os = new FileOutputStream(currentFile);
+				OutputStreamWriter osw = new OutputStreamWriter(os);
+				PrintWriter pw = new PrintWriter(osw);
+				pw.write(editArea.getText());
+				pw.flush();
+				pw.close();
+				
+				isNewFile = false;
+				currentFile = saveFileName;
+				this.setTitle(saveFileName.getName());
+				statusLabel2.setText("当前文件名  " + saveFileName.getAbsolutePath());
+			}catch(IOException ioe) {
+				ioe.printStackTrace();
+			}
+		}
+		
+	}
+	
+	//新建文件
+	public void fileNew() {
+		editArea.replaceRange("", 0, editArea.getText().length());
+		statusLabel2.setText("新建文件");
+		this.setTitle("无标题");
+		isNewFile = true;
+		undo.discardAllEdits();  //撤销所有的操作
+		editUndo.setEnabled(false);
+		oldText = editArea.getText();
+	}
+	
+	//打开文件
+	public void fileOpen() {
+		JFileChooser fileChooser = new JFileChooser();
+		//文件过滤器
+		javax.swing.filechooser.FileFilter filter = new javax.swing.filechooser.FileFilter() {
+			@Override
+            public String getDescription() {
+                // TODO Auto-generated method stub
+                return ".txt";
+            }
+			@Override
+            public boolean accept(File f) {
+                // TODO Auto-generated method stub
+                String name = f.getName();
+                return f.isDirectory() || name.toLowerCase().endsWith(".txt"); // 仅显示目录和txt文件
+                                                                                // ;
+            }
+	    };
+	    fileChooser.addChoosableFileFilter(filter);
+	    fileChooser.setFileFilter(filter);
+	    
+	    fileChooser.setFileSelectionMode(JFileChooser.FILES_ONLY);   //只打开文件
+		fileChooser.setDialogTitle("打开文件");
+		
+		int result = fileChooser.showOpenDialog(this);
+		if(result == JFileChooser.CANCEL_OPTION) {
+			statusLabel2.setText("未选择任何文件");
+			return;
+		}
+		File fileName = fileChooser.getSelectedFile();
+		if(fileName == null || fileName.getName().equals("")) {  //文件名不合法
+			JOptionPane.showConfirmDialog(this, "不合法的文件名", "不合法的文件名", JOptionPane.ERROR_MESSAGE);
+		}
+		else {
+			try {
+				FileInputStream fileInputStream = new FileInputStream(fileName);
+				byte[] content = new byte[fileInputStream.available()];        //??????????????????????????????
+				fileInputStream.read(content);
+				editArea.setText(new String (content));
+				editArea.setCaretPosition(0);  //????????????????????????
+				fileInputStream.close();
+				
+				this.setTitle(fileName.getName());
+				statusLabel2.setText("当前打开文件：" + fileName.getAbsoluteFile());  //文件名+文件路径
+				isNewFile = false;
+				currentFile = fileName;
+				oldText = editArea.getText();
+			}catch(IOException ioe) {
+				ioe.printStackTrace();
+			}
+		}	
+	}
+	
+	//查找功能
+	public void find() {
+		final JDialog findDialog = new JDialog(this,"查找",false);  //false时允许其他窗口同时处于激活状态(即无模式)，就是其余的窗口是可以弹出的
+		Container con = findDialog.getContentPane();    //返回此对话框的contentPane对象
+		con.setLayout(new FlowLayout(FlowLayout.LEFT));   //????????????
+		JLabel findContentLabel = new JLabel("查找内容(N): ");
+		final JTextField findText = new JTextField(15);
+		JButton findNextButton = new JButton("查找下一个(F): ");
+		final JCheckBox matchCheckBox = new JCheckBox("区分大小写(C): ");
+		ButtonGroup buttonGroup = new ButtonGroup();
+		final JRadioButton upButton = new JRadioButton("向上(U)");
+		final JRadioButton downButton = new JRadioButton("向下(D)");
+		downButton.setSelected(true);
+		buttonGroup.add(upButton);
+		buttonGroup.add(downButton);
+		/*ButtonGroup此类用于为一组按钮创建一个多斥（multiple-exclusion）作用域。  
+        	使用相同的 ButtonGroup 对象创建一组按钮意味着“开启”其中一个按钮时，将关闭组中的其他所有按钮。*/    
+		/*JRadioButton此类实现一个单选按钮，此按钮项可被选择或取消选择，并可为用户显示其状态。  
+        	与 ButtonGroup 对象配合使用可创建一组按钮，一次只能选择其中的一个按钮。  
+        	（创建一个 ButtonGroup 对象并用其 add 方法将 JRadioButton 对象包含在此组中。）*/ 
+		JButton cancel = new JButton("取消");
+		cancel.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				findDialog.dispose();                //???????????????????
+			}
+		});
+		//查找下一个
+		findNextButton.addActionListener(new ActionListener() {
+			public void actionPerformed(ActionEvent e) {
+				//区分大小写(C) 的JCheckBox是否被选中
+				int k=0, m=0;
+				final String str1, str2, str3, str4, strA, strB;
+				str1 = editArea.getText();
+				str2 = editArea.getText();
+				str3 = str1.toUpperCase();  //转换为大写
+				str4 = str2.toUpperCase();
+				if(matchCheckBox.isSelected()) {    //区分大小写
+					strA = str1;
+					strB = str2;
+				}
+				else {  //不区分大小写，全部转换为大写
+					strA = str3;
+					strB = str4;
+				}
+				//向上查找
+				if(upButton.isSelected()) {
+					if(editArea.getSelectedText() == null) {
+						k = strA.lastIndexOf(strB, editArea.getCaretPosition()-1);
+					}
+					else {
+						k = strB.lastIndexOf(strB, editArea.getCaretPosition() - findText.getText().length() - 1);
+					}
+					if(k > -1) {
+						editArea.setCaretPosition(k);      //定位至选中的位置
+						editArea.select(k,  k + strB.length());   //选中的内容
+					}
+					else {
+						JOptionPane.showConfirmDialog(null, "未找到查找内容", "查找", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+				else if(downButton.isSelected()) {
+					if(editArea.getSelectedText() == null) {
+						k = strA.indexOf(strB, editArea.getCaretPosition() + 1);
+					}
+					else {
+						k = strA.indexOf(strB, editArea.getCaretPosition() - findText.getText().length() - 1);
+					}
+					if(k > -1) {
+						editArea.setCaretPosition(k);
+						editArea.select(k, k + strB.length());
+					}
+					else {
+						JOptionPane.showConfirmDialog(null, "未找到查找内容", "查找", JOptionPane.ERROR_MESSAGE);
+					}
+				}
+			}
+		});
+		//查找界面
+		JPanel panel1 = new JPanel();
+		JPanel panel2 = new JPanel();
+		JPanel panel3 = new JPanel();
+		JPanel directionPanel = new JPanel();
+		directionPanel.setBorder(BorderFactory.createTitledBorder("方向"));
+		//设置directionPanel的边框
+		directionPanel.add(upButton);
+		directionPanel.add(downButton);
+		panel1.setLayout(new GridLayout(2,1));
+		panel1.add(findNextButton);
+		panel1.add(cancel);
+		panel2.add(findContentLabel);
+		panel2.add(findText);
+		panel2.add(panel1);
+		panel3.add(matchCheckBox);
+		panel3.add(directionPanel);
+		con.add(panel2);
+		con.add(panel3);
+		findDialog.setSize(410, 180);
+		findDialog.setResizable(false);
+		findDialog.setLocation(230, 280);
+		findDialog.setVisible(true);
+		
+	}
+	
+	//替换功能的实现
+	 public void replace() {  
+        final JDialog findDialog = new JDialog(this, "替换", true);  
+        Container con = findDialog.getContentPane();  
+        con.setLayout(new FlowLayout(FlowLayout.LEFT));  
+        JLabel searchContentLabel = new JLabel("查找内容(N) :");  
+        JLabel replaceContentLabel = new JLabel("替换为(P)　 :");  
+        final JTextField findText = new JTextField(22);  
+        final JTextField replaceText = new JTextField(22);  
+        final JCheckBox matchcase = new JCheckBox("区分大小写");  
+        ButtonGroup bGroup = new ButtonGroup();  
+        final JRadioButton up = new JRadioButton("向上(U)");  
+        final JRadioButton down = new JRadioButton("向下(D)");  
+        down.setSelected(true);  
+        bGroup.add(up);  
+        bGroup.add(down);  
+        JButton searchNext = new JButton("查找下一个(F)");  
+        JButton replace = new JButton("替换(R)");  
+        final JButton replaceAll = new JButton("全部替换(A)");  
+        searchNext.setPreferredSize(new Dimension(110, 22));  
+        replace.setPreferredSize(new Dimension(110, 22));  
+        replaceAll.setPreferredSize(new Dimension(110, 22));  
+        // "替换"按钮的事件处理  
+        replace.addActionListener(new ActionListener() {  
+            public void actionPerformed(ActionEvent e) {  
+  
+                if (replaceText.getText().length() == 0 && editArea.getSelectedText() != null)  
+                    editArea.replaceSelection("");  
+                if (replaceText.getText().length() > 0 && editArea.getSelectedText() != null)  
+                    editArea.replaceSelection(replaceText.getText());  
+            }  
+        });  
+  
+        // "替换全部"按钮的事件处理  
+        replaceAll.addActionListener(new ActionListener() {  
+            public void actionPerformed(ActionEvent e) {  
+  
+                editArea.setCaretPosition(0); // 将光标放到编辑区开头  
+                int a = 0, b = 0, replaceCount = 0;  
+  
+                if (findText.getText().length() == 0) {  
+                    JOptionPane.showMessageDialog(findDialog, "请填写查找内容!", "提示", JOptionPane.WARNING_MESSAGE);  
+                    findText.requestFocus(true);  
+                    return;  
+                }  
+                while (a > -1) {  
+  
+                    int FindStartPos = editArea.getCaretPosition();  
+                    String str1, str2, str3, str4, strA, strB;  
+                    str1 = editArea.getText();  
+                    str2 = str1.toLowerCase();  
+                    str3 = findText.getText();  
+                    str4 = str3.toLowerCase();  
+  
+                    if (matchcase.isSelected()) {  
+                        strA = str1;  
+                        strB = str3;  
+                    } else {  
+                        strA = str2;  
+                        strB = str4;  
+                    }  
+  
+                    if (up.isSelected()) {  
+                        if (editArea.getSelectedText() == null) {  
+                            a = strA.lastIndexOf(strB, FindStartPos - 1);  
+                        } else {  
+                            a = strA.lastIndexOf(strB, FindStartPos - findText.getText().length() - 1);  
+                        }  
+                    } else if (down.isSelected()) {  
+                        if (editArea.getSelectedText() == null) {  
+                            a = strA.indexOf(strB, FindStartPos);  
+                        } else {  
+                            a = strA.indexOf(strB, FindStartPos - findText.getText().length() + 1);  
+                        }  
+  
+                    }  
+  
+                    if (a > -1) {  
+                        if (up.isSelected()) {  
+                            editArea.setCaretPosition(a);  
+                            b = findText.getText().length();  
+                            editArea.select(a, a + b);  
+                        } else if (down.isSelected()) {  
+                            editArea.setCaretPosition(a);  
+                            b = findText.getText().length();  
+                            editArea.select(a, a + b);  
+                        }  
+                    } else {  
+                        if (replaceCount == 0) {  
+                            JOptionPane.showMessageDialog(findDialog, "找不到您查找的内容!", "记事本", JOptionPane.INFORMATION_MESSAGE);  
+                        } else {  
+                            JOptionPane.showMessageDialog(findDialog, "成功替换" + replaceCount + "个匹配内容!", "替换成功", JOptionPane.INFORMATION_MESSAGE);  
+                        }  
+                    }  
+                    if (replaceText.getText().length() == 0 && editArea.getSelectedText() != null) {  
+                        editArea.replaceSelection("");  
+                        replaceCount++;  
+                    }  
+                    if (replaceText.getText().length() > 0 && editArea.getSelectedText() != null) {  
+                        editArea.replaceSelection(replaceText.getText());  
+                        replaceCount++;  
+                    }  
+                }// end while  
+            }  
+        }); /* "替换全部"按钮的事件处理结束 */  
+  
+        // "查找下一个"按钮事件处理  
+        searchNext.addActionListener(new ActionListener() {  
+  
+            public void actionPerformed(ActionEvent e) {  
+                int a = 0, b = 0;  
+                int FindStartPos = editArea.getCaretPosition();  
+                String str1, str2, str3, str4, strA, strB;  
+                str1 = editArea.getText();  
+                str2 = str1.toLowerCase();  
+                str3 = findText.getText();  
+                str4 = str3.toLowerCase();  
+                // "区分大小写"的CheckBox被选中  
+                if (matchcase.isSelected()) {  
+                    strA = str1;  
+                    strB = str3;  
+                } else {  
+                    strA = str2;  
+                    strB = str4;  
+                }  
+  
+                if (up.isSelected()) {  
+                    if (editArea.getSelectedText() == null) {  
+                        a = strA.lastIndexOf(strB, FindStartPos - 1);  
+                    } else {  
+                        a = strA.lastIndexOf(strB, FindStartPos - findText.getText().length() - 1);  
+                    }  
+                } else if (down.isSelected()) {  
+                    if (editArea.getSelectedText() == null) {  
+                        a = strA.indexOf(strB, FindStartPos);  
+                    } else {  
+                        a = strA.indexOf(strB, FindStartPos - findText.getText().length() + 1);  
+                    }  
+  
+                }  
+                if (a > -1) {  
+                    if (up.isSelected()) {  
+                        editArea.setCaretPosition(a);  
+                        b = findText.getText().length();  
+                        editArea.select(a, a + b);  
+                    } else if (down.isSelected()) {  
+                        editArea.setCaretPosition(a);  
+                        b = findText.getText().length();  
+                        editArea.select(a, a + b);  
+                    }  
+                } else {  
+                    JOptionPane.showMessageDialog(null, "找不到您查找的内容!", "加密系统", JOptionPane.INFORMATION_MESSAGE);  
+                }  
+  
+            }  
+        });/* "查找下一个"按钮事件处理结束 */  
+        // "取消"按钮及事件处理  
+        JButton cancel = new JButton("取消");  
+        cancel.setPreferredSize(new Dimension(110, 22));  
+        cancel.addActionListener(new ActionListener() {  
+            public void actionPerformed(ActionEvent e) {  
+                findDialog.dispose();  
+            }  
+        });  
+  
+        // 创建"查找与替换"对话框的界面  
+        JPanel bottomPanel = new JPanel();  
+        JPanel centerPanel = new JPanel();  
+        JPanel topPanel = new JPanel();  
+  
+        JPanel direction = new JPanel();  
+        direction.setBorder(BorderFactory.createTitledBorder("方向 "));  
+        direction.add(up);  
+        direction.add(down);  
+        direction.setPreferredSize(new Dimension(170, 60));  
+        JPanel replacePanel = new JPanel();  
+        replacePanel.setLayout(new GridLayout(2, 1));  
+        replacePanel.add(replace);  
+        replacePanel.add(replaceAll);  
+  
+        topPanel.add(searchContentLabel);  
+        topPanel.add(findText);  
+        topPanel.add(searchNext);  
+        centerPanel.add(replaceContentLabel);  
+        centerPanel.add(replaceText);  
+        centerPanel.add(replacePanel); 
+        bottomPanel.add(matchcase);  
+        bottomPanel.add(direction);  
+        bottomPanel.add(cancel);  
+  
+        con.add(topPanel);  
+        con.add(centerPanel);  
+        con.add(bottomPanel);  
+  
+        // 设置"查找与替换"对话框的大小、可更改大小(否)、位置和可见性  
+        
+        findDialog.setSize(480, 220);  
+        findDialog.setResizable(false);  
+        findDialog.setLocation(660, 450);  
+        findDialog.setVisible(true);  
+    }   
+	 
+	 //打印功能
+	 public void print(){  
+        try{  
+            p = getToolkit().getPrintJob(this,"ok",null);//创建一个Printfjob 对象 p  
+            g = p.getGraphics();//p 获取一个用于打印的 Graphics 的对象  
+            //g.translate(120,200);//改变组建的位置   
+            this.editArea.printAll(g);  
+            p.end();//释放对象 g    
+        }  
+        catch(Exception a){  
+         
+        }   
+	  }  
+	
+	 //转到功能
+	 private void turnTo() {  
+        final JDialog gotoDialog = new JDialog(this, "转到下列行");  
+        JLabel gotoLabel = new JLabel("行数(L):");  
+        final JTextField linenum = new JTextField(5);  
+        linenum.setText("1");  
+        linenum.selectAll();  
+  
+        JButton okButton = new JButton("确定");  
+        okButton.addActionListener(new ActionListener() {  
+  
+            public void actionPerformed(ActionEvent e) {  
+                int totalLine = editArea.getLineCount();  
+                int[] lineNumber = new int[totalLine + 1];  
+                String s = editArea.getText();  
+                int pos = 0, t = 0;  
+  
+                while (true) {  
+                    pos = s.indexOf('\12', pos);  
+                    // System.out.println("引索pos:"+pos);  
+                    if (pos == -1)  
+                        break;  
+                    lineNumber[t++] = pos++;  
+                }  
+  
+                int gt = 1;  
+                try {  
+                    gt = Integer.parseInt(linenum.getText());  
+                } catch (NumberFormatException efe) {  
+                    JOptionPane.showMessageDialog(null, "请输入行数!", "提示", JOptionPane.WARNING_MESSAGE);  
+                    linenum.requestFocus(true);  
+                    return;  
+                }  
+  
+                if (gt < 2 || gt >= totalLine) {  
+                    if (gt < 2)  
+                        editArea.setCaretPosition(0);  
+                    else  
+                        editArea.setCaretPosition(s.length());  
+                } else  
+                    editArea.setCaretPosition(lineNumber[gt - 2] + 1);  
+  
+                gotoDialog.dispose();  
+            }  
+  
+        });  
+  
+        JButton cancelButton = new JButton("取消");  
+        cancelButton.addActionListener(new ActionListener() {  
+            public void actionPerformed(ActionEvent e) {  
+                gotoDialog.dispose();  
+            }  
+        });  
+  
+        Container con = gotoDialog.getContentPane();  
+        con.setLayout(new FlowLayout());  
+        con.add(gotoLabel);  
+        con.add(linenum);  
+        con.add(okButton);  
+        con.add(cancelButton);  
+  
+        gotoDialog.setSize(200, 110);  
+        gotoDialog.setResizable(false);  
+        gotoDialog.setLocation(300, 280);  
+        gotoDialog.setVisible(true);  
+    }  
+	//撤销类，实现接口UndoableEditListener的类UndoHandler(与撤销操作有关)
+	class UndoHandler implements UndoableEditListener    
+	{     
+	    public void undoableEditHappened(UndoableEditEvent uee)    
+	    {     
+	        undo.addEdit(uee.getEdit());    
+	    }    
+	}  
+	//内部类显示时间
+	class MyTask extends TimerTask{
+		public void run() {
+			statusLabel1.setText(new Date().toString());
+			System.gc();
+		}
+	}
+}

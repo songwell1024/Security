@@ -1,0 +1,555 @@
+package System;
+
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.event.ActionListener;
+import EncryptionAlgorithm.BytesAndHex;
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import org.apache.commons.codec.binary.Base64;
+import javax.swing.JOptionPane;  
+import javax.swing.JPanel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JTextArea;
+import EncryptionAlgorithm.AESUtil;
+import EncryptionAlgorithm.DESede;
+import EncryptionAlgorithm.DESUtil;
+import EncryptionAlgorithm.HashUtil;
+import EncryptionAlgorithm.RSAUtil;
+
+import java.lang.NullPointerException;
+import java.util.Map;
+
+/**
+ * UI
+ * @author WilsonSong
+ * @version 2018-05-21 
+ */
+@SuppressWarnings("serial")
+public class test  {
+	private String EncryptionAlgorithm = "DES";  //存放加密算法, 默认DES
+	private String HashAlgorithm = "MD5";   //存放Hash函数, 默认MD5
+	private String EncryptionStr;   //密文
+	private String DecryptionStr;  //明文
+	private String EncryptionKeyStr;  //秘钥
+	private String JDecryptionStr;   //解密的密文
+	int PlanetLength;   //Hash函数加密后的内容的长度
+	String  publicKey1,publicKey2;   //公钥
+    String  privateKey1,privateKey2; //私钥
+	private String RKey;    //字节码秘钥
+	byte[] byteResult; //字节码密文
+	String Base64Str; //编码密文
+	JButton Encryption, Decryption, Help; 
+	JTextArea PlainText, EncryptionKey, EncryptionText, DecryptionText;
+	JComboBox<String> SecutityCombo, HashCombo;
+	
+	String aejbchopcEStr;
+	
+	String HStr = HashUtil.string2MD5(PlainAreaText);   //MD5加密  16进制显示
+
+	//RSA加密
+	Map<String, String> keyMap = RSAUtil.createKeys(1024);
+	publicKey1 = keyMap.get("publicKey");
+    privateKey1 = keyMap.get("privateKey");
+    //RSA 加密
+    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+   	
+	String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+	
+	
+	//DES加密
+	byte[] byteRKA1 = DESUtil.initKey();   //产生秘钥
+	byteResult = DESUtil.encryptDES(EncryptionString.getBytes(), byteRKA1);
+	EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+	
+	String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+	//第二轮RSA加密			
+	Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+	publicKey2 = keyMap2.get("publicKey");
+    privateKey2 = keyMap2.get("privateKey");
+    //加密后的内容
+    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文
+	
+	}   
+	
+	/*
+	 * 系统加密算法选择
+	 */
+	public void Encryption(String PlainAreaText) {      	
+		if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("MD5") ) {
+			//MD5 加密
+	        String HStr = HashUtil.string2MD5(PlainAreaText);   //MD5加密  16进制显示
+
+			//RSA加密
+			Map<String, String> keyMap = RSAUtil.createKeys(1024);
+			publicKey1 = keyMap.get("publicKey");
+		    privateKey1 = keyMap.get("privateKey");
+		    //RSA 加密
+		    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+		   	
+			String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+			
+			
+			//DES加密
+			byte[] byteRKA1 = DESUtil.initKey();   //产生秘钥
+			byteResult = DESUtil.encryptDES(EncryptionString.getBytes(), byteRKA1);
+			EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+			
+			String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+			//第二轮RSA加密			
+			Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+			publicKey2 = keyMap2.get("publicKey");
+		    privateKey2 = keyMap2.get("privateKey");
+		    //加密后的内容
+		    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文
+		    			
+			
+		 }
+//		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("MD5") ) {
+
+//		}
+//		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("MD5") ) {
+//			
+//		}
+//		else if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("SHA1") ) {
+//			
+//		}
+//		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("SHA1") ) {
+//			
+//		}
+//		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("SHA1") ) {
+//			
+//		}
+//		else if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("SHA256") ) {
+//			
+//		}
+//		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("SHA256") ) {
+//			
+//		}
+//		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("SHA256") ) {
+//			
+//		}
+//		else if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("SHA512") ) {
+//			
+//		}
+//		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("SHA512") ) {
+//			
+//		}
+//		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("SHA512") ) {
+//			
+//		}
+	}
+	
+	/*
+	 * 系统解密算法选择
+	 */
+	public void Decryption(String EncryptionAreaText) {
+		if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("MD5") ) {
+			try {
+				
+				//RSA解密出DES的秘钥
+				//第一轮解密
+				String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+				
+				
+				//DES 解密
+				byte[] kkk = StrKey.getBytes();
+				byte[] plain1 = DESUtil.decryptDES(byteResult, StrKey.getBytes());				
+				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+				String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文				
+				String JDStr = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+							
+				String JDecryptionString = HashUtil.HexToString(JDStr); //解密的明文
+				
+				
+				//RSA解密hash(m)
+				String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+				
+				
+				//HASH加密
+				String EnHmStr  = HashUtil.string2MD5(JDecryptionString);   //MD5加密  16进制显示
+				
+//				//搞定
+//				byte[] byteHmStr = Base64.decodeBase64(HmStr);
+//				byte[] DbyteHmStr = DESUtil.decryptDES(byteHmStr, RKA1);
+//							
+//				//转换
+//				String DeHmStr =  HashUtil.HexToString(BytesAndHex.fromBytesToHex(DbyteHmStr));    //解密的密文
+//				
+				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+					JDecryptionStr = JDecryptionString;   //将解密信息传入
+				}				
+			} catch(NullPointerException N) {
+				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+			}
+		}
+//		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("MD5") ) {
+//			try {
+//				//DES 解密
+//				byte[] plain1 = DESede.decrypt3DES(byteResult, RKA2);				
+//				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+//				String HmStr = FirstJDecryptionStr.substring(0,Base64Str.length());  //字符串拆分  解密的明文				
+//				String JDStr = FirstJDecryptionStr.substring(Base64Str.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+//				
+//				byte[] byteJDecryptionStr = Base64.decodeBase64(JDStr);
+//				String JDHexStr =  BytesAndHex.fromBytesToHex(byteJDecryptionStr);    //解密的密文			
+//				String JDecryptionString = HashUtil.HexToString(JDHexStr);
+//					
+//				//HASH加密
+//				String EnHmStr  = HashUtil.string2MD5(JDecryptionString);   //MD5加密  16进制显示
+//				
+//				///搞定
+//				byte[] byteHmStr = Base64.decodeBase64(HmStr);
+//				byte[] DbyteHmStr = DESede.decrypt3DES(byteHmStr, RKA1);
+//							
+//				//转换
+//				String DeHmStr =  HashUtil.HexToString(BytesAndHex.fromBytesToHex(DbyteHmStr));    //解密的密文
+//				
+//				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+//					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+//					JDecryptionStr = JDecryptionString;   //将解密信息传入
+//				}				
+//			} catch(NullPointerException N) {
+//				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+//			}
+//			
+//		}
+//		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("MD5") ) {
+//			try {
+//				//AES 解密
+//				byte[] plain1 = AESUtil.decryptAES(byteResult, RKA2);				
+//				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+//				String HmStr = FirstJDecryptionStr.substring(0,Base64Str.length());  //字符串拆分  解密的明文				
+//				String JDStr = FirstJDecryptionStr.substring(Base64Str.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+//				
+//				byte[] byteJDecryptionStr = Base64.decodeBase64(JDStr);
+//				String JDHexStr =  BytesAndHex.fromBytesToHex(byteJDecryptionStr);    //解密的密文			
+//				String JDecryptionString = HashUtil.HexToString(JDHexStr);
+//					
+//				//HASH加密
+//				String EnHmStr  = HashUtil.string2MD5(JDecryptionString);   //MD5加密  16进制显示
+//				
+//				///搞定
+//				byte[] byteHmStr = Base64.decodeBase64(HmStr);
+//				//解密
+//				byte[] DbyteHmStr = AESUtil.decryptAES(byteHmStr, RKA1);
+//							
+//				//转换
+//				String DeHmStr =  HashUtil.HexToString(BytesAndHex.fromBytesToHex(DbyteHmStr));    //解密的密文
+//				
+//				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+//					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+//					JDecryptionStr = JDecryptionString;   //将解密信息传入
+//				}				
+//			} catch(NullPointerException N) {
+//				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+//			}	
+//		}
+//		else if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("SHA1") ) {
+//			try {
+//				//DES 解密
+//				byte[] plain1 = DESUtil.decryptDES(byteResult, RKA2);				
+//				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+//				String HmStr = FirstJDecryptionStr.substring(0,Base64Str.length());  //字符串拆分  解密的明文				
+//				String JDStr = FirstJDecryptionStr.substring(Base64Str.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+//				
+//				byte[] byteJDecryptionStr = Base64.decodeBase64(JDStr);
+//				String JDHexStr =  BytesAndHex.fromBytesToHex(byteJDecryptionStr);    //解密的密文			
+//				String JDecryptionString = HashUtil.HexToString(JDHexStr);
+//					
+//				//HASH加密
+//				String EnHmStr  = HashUtil.SHA1(JDecryptionString);   //MD5加密  16进制显示
+//				
+//				//搞定
+//				byte[] byteHmStr = Base64.decodeBase64(HmStr);
+//				byte[] DbyteHmStr = DESUtil.decryptDES(byteHmStr, RKA1);
+//							
+//				//转换
+//				String DeHmStr =  HashUtil.HexToString(BytesAndHex.fromBytesToHex(DbyteHmStr));    //解密的密文
+//				
+//				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+//					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+//					JDecryptionStr = JDecryptionString;   //将解密信息传入
+//				}				
+//			} catch(NullPointerException N) {
+//				JOptionPane.showConfirmDialog(this, "未输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+//			}
+//		}
+//		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("SHA1") ) {
+//			try {
+//				//3DES 解密
+//				byte[] plain1 = DESede.decrypt3DES(byteResult, RKA2);				
+//				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+//				String HmStr = FirstJDecryptionStr.substring(0,Base64Str.length());  //字符串拆分  解密的明文				
+//				String JDStr = FirstJDecryptionStr.substring(Base64Str.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+//				
+//				byte[] byteJDecryptionStr = Base64.decodeBase64(JDStr);
+//				String JDHexStr =  BytesAndHex.fromBytesToHex(byteJDecryptionStr);    //解密的密文			
+//				String JDecryptionString = HashUtil.HexToString(JDHexStr);
+//					
+//				//HASH加密
+//				String EnHmStr  = HashUtil.SHA1(JDecryptionString);   //MD5加密  16进制显示
+//				
+//				///搞定
+//				byte[] byteHmStr = Base64.decodeBase64(HmStr);
+//				byte[] DbyteHmStr = DESede.decrypt3DES(byteHmStr, RKA1);
+//							
+//				//转换
+//				String DeHmStr =  HashUtil.HexToString(BytesAndHex.fromBytesToHex(DbyteHmStr));    //解密的密文
+//				
+//				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+//					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+//					JDecryptionStr = JDecryptionString;   //将解密信息传入
+//				}				
+//			} catch(NullPointerException N) {
+//				JOptionPane.showConfirmDialog(this, "未输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+//			}
+//		}
+//		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("SHA1") ) {
+//			try {
+//				//AES 解密
+//				byte[] plain1 = AESUtil.decryptAES(byteResult, RKA2);				
+//				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+//				String HmStr = FirstJDecryptionStr.substring(0,Base64Str.length());  //字符串拆分  解密的明文				
+//				String JDStr = FirstJDecryptionStr.substring(Base64Str.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+//				
+//				byte[] byteJDecryptionStr = Base64.decodeBase64(JDStr);
+//				String JDHexStr =  BytesAndHex.fromBytesToHex(byteJDecryptionStr);    //解密的密文			
+//				String JDecryptionString = HashUtil.HexToString(JDHexStr);
+//					
+//				//HASH加密
+//				String EnHmStr  = HashUtil.SHA1(JDecryptionString);   //MD5加密  16进制显示
+//				
+//				///搞定
+//				byte[] byteHmStr = Base64.decodeBase64(HmStr);
+//				//解密
+//				byte[] DbyteHmStr = AESUtil.decryptAES(byteHmStr, RKA1);
+//							
+//				//转换
+//				String DeHmStr =  HashUtil.HexToString(BytesAndHex.fromBytesToHex(DbyteHmStr));    //解密的密文
+//				
+//				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+//					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+//					JDecryptionStr = JDecryptionString;   //将解密信息传入
+//				}				
+//			} catch(NullPointerException N) {
+//				JOptionPane.showConfirmDialog(this, "为输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+//			}
+//		}
+//		else if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("SHA256") ) {
+//			try {
+//				//DES 解密
+//				byte[] plain1 = DESUtil.decryptDES(byteResult, RKA2);				
+//				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+//				String HmStr = FirstJDecryptionStr.substring(0,Base64Str.length());  //字符串拆分  解密的明文				
+//				String JDStr = FirstJDecryptionStr.substring(Base64Str.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+//				
+//				byte[] byteJDecryptionStr = Base64.decodeBase64(JDStr);
+//				String JDHexStr =  BytesAndHex.fromBytesToHex(byteJDecryptionStr);    //解密的密文			
+//				String JDecryptionString = HashUtil.HexToString(JDHexStr);
+//					
+//				//HASH加密
+//				String EnHmStr  = HashUtil.SHA256(JDecryptionString);   //MD5加密  16进制显示
+//				
+//				//搞定
+//				byte[] byteHmStr = Base64.decodeBase64(HmStr);
+//				byte[] DbyteHmStr = DESUtil.decryptDES(byteHmStr, RKA1);
+//							
+//				//转换
+//				String DeHmStr =  HashUtil.HexToString(BytesAndHex.fromBytesToHex(DbyteHmStr));    //解密的密文
+//				
+//				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+//					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+//					JDecryptionStr = JDecryptionString;   //将解密信息传入
+//				}				
+//			} catch(NullPointerException N) {
+//				JOptionPane.showConfirmDialog(this, "未输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+//			}
+//		}
+//		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("SHA256") ) {
+//			try {
+//				//3DES 解密
+//				byte[] plain1 = DESede.decrypt3DES(byteResult, RKA2);				
+//				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+//				String HmStr = FirstJDecryptionStr.substring(0,Base64Str.length());  //字符串拆分  解密的明文				
+//				String JDStr = FirstJDecryptionStr.substring(Base64Str.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+//				
+//				byte[] byteJDecryptionStr = Base64.decodeBase64(JDStr);
+//				String JDHexStr =  BytesAndHex.fromBytesToHex(byteJDecryptionStr);    //解密的密文			
+//				String JDecryptionString = HashUtil.HexToString(JDHexStr);
+//					
+//				//HASH加密
+//				String EnHmStr  = HashUtil.SHA256(JDecryptionString);   //MD5加密  16进制显示
+//				
+//				///搞定
+//				byte[] byteHmStr = Base64.decodeBase64(HmStr);
+//				byte[] DbyteHmStr = DESede.decrypt3DES(byteHmStr, RKA1);
+//							
+//				//转换
+//				String DeHmStr =  HashUtil.HexToString(BytesAndHex.fromBytesToHex(DbyteHmStr));    //解密的密文
+//				
+//				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+//					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+//					JDecryptionStr = JDecryptionString;   //将解密信息传入
+//				}				
+//			} catch(NullPointerException N) {
+//				JOptionPane.showConfirmDialog(this, "未输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+//			}
+//		}
+//		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("SHA256") ) {
+//			try {
+//				//AES 解密
+//				byte[] plain1 = AESUtil.decryptAES(byteResult, RKA2);				
+//				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+//				String HmStr = FirstJDecryptionStr.substring(0,Base64Str.length());  //字符串拆分  解密的明文				
+//				String JDStr = FirstJDecryptionStr.substring(Base64Str.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+//				
+//				byte[] byteJDecryptionStr = Base64.decodeBase64(JDStr);
+//				String JDHexStr =  BytesAndHex.fromBytesToHex(byteJDecryptionStr);    //解密的密文			
+//				String JDecryptionString = HashUtil.HexToString(JDHexStr);
+//					
+//				//HASH加密
+//				String EnHmStr  = HashUtil.SHA256(JDecryptionString);   //MD5加密  16进制显示
+//				
+//				///搞定
+//				byte[] byteHmStr = Base64.decodeBase64(HmStr);
+//				//解密
+//				byte[] DbyteHmStr = AESUtil.decryptAES(byteHmStr, RKA1);
+//							
+//				//转换
+//				String DeHmStr =  HashUtil.HexToString(BytesAndHex.fromBytesToHex(DbyteHmStr));    //解密的密文
+//				
+//				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+//					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+//					JDecryptionStr = JDecryptionString;   //将解密信息传入
+//				}				
+//			} catch(NullPointerException N) {
+//				JOptionPane.showConfirmDialog(this, "未输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+//			}
+//		}
+//		else if( EncryptionAlgorithm.equals("DES") && HashAlgorithm.equals("SHA512") ) {
+//			try {
+//				//DES 解密
+//				byte[] plain1 = DESUtil.decryptDES(byteResult, RKA2);				
+//				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+//				String HmStr = FirstJDecryptionStr.substring(0,Base64Str.length());  //字符串拆分  解密的明文				
+//				String JDStr = FirstJDecryptionStr.substring(Base64Str.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+//				
+//				byte[] byteJDecryptionStr = Base64.decodeBase64(JDStr);
+//				String JDHexStr =  BytesAndHex.fromBytesToHex(byteJDecryptionStr);    //解密的密文			
+//				String JDecryptionString = HashUtil.HexToString(JDHexStr);
+//					
+//				//HASH加密
+//				String EnHmStr  = HashUtil.SHA512(JDecryptionString);   //MD5加密  16进制显示
+//				
+//				//搞定
+//				byte[] byteHmStr = Base64.decodeBase64(HmStr);
+//				byte[] DbyteHmStr = DESUtil.decryptDES(byteHmStr, RKA1);
+//							
+//				//转换
+//				String DeHmStr =  HashUtil.HexToString(BytesAndHex.fromBytesToHex(DbyteHmStr));    //解密的密文
+//				
+//				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+//					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+//					JDecryptionStr = JDecryptionString;   //将解密信息传入
+//				}				
+//			} catch(NullPointerException N) {
+//				JOptionPane.showConfirmDialog(this, "未输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+//			}
+//		}
+//		else if( EncryptionAlgorithm.equals("3DES") && HashAlgorithm.equals("SHA512") ) {
+//			try {
+//				//3DES 解密
+//				byte[] plain1 = DESede.decrypt3DES(byteResult, RKA2);				
+//				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+//				String HmStr = FirstJDecryptionStr.substring(0,Base64Str.length());  //字符串拆分  解密的明文				
+//				String JDStr = FirstJDecryptionStr.substring(Base64Str.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+//				
+//				byte[] byteJDecryptionStr = Base64.decodeBase64(JDStr);
+//				String JDHexStr =  BytesAndHex.fromBytesToHex(byteJDecryptionStr);    //解密的密文			
+//				String JDecryptionString = HashUtil.HexToString(JDHexStr);
+//					
+//				//HASH加密
+//				String EnHmStr  = HashUtil.SHA512(JDecryptionString);   //MD5加密  16进制显示
+//				
+//				///搞定
+//				byte[] byteHmStr = Base64.decodeBase64(HmStr);
+//				byte[] DbyteHmStr = DESede.decrypt3DES(byteHmStr, RKA1);
+//							
+//				//转换
+//				String DeHmStr =  HashUtil.HexToString(BytesAndHex.fromBytesToHex(DbyteHmStr));    //解密的密文
+//				
+//				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+//					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+//					JDecryptionStr = JDecryptionString;   //将解密信息传入
+//				}				
+//			} catch(NullPointerException N) {
+//				JOptionPane.showConfirmDialog(this, "未输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+//			}
+//		}
+//		else if( EncryptionAlgorithm.equals("AES") && HashAlgorithm.equals("SHA512") ) {
+//			try {
+//				//AES 解密
+//				byte[] plain1 = AESUtil.decryptAES(byteResult, RKA2);				
+//				String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+//				String HmStr = FirstJDecryptionStr.substring(0,Base64Str.length());  //字符串拆分  解密的明文				
+//				String JDStr = FirstJDecryptionStr.substring(Base64Str.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+//				
+//				byte[] byteJDecryptionStr = Base64.decodeBase64(JDStr);
+//				String JDHexStr =  BytesAndHex.fromBytesToHex(byteJDecryptionStr);    //解密的密文			
+//				String JDecryptionString = HashUtil.HexToString(JDHexStr);
+//					
+//				//HASH加密
+//				String EnHmStr  = HashUtil.SHA512(JDecryptionString);   //MD5加密  16进制显示
+//				
+//				///搞定
+//				byte[] byteHmStr = Base64.decodeBase64(HmStr);
+//				//解密
+//				byte[] DbyteHmStr = AESUtil.decryptAES(byteHmStr, RKA1);
+//							
+//				//转换
+//				String DeHmStr =  HashUtil.HexToString(BytesAndHex.fromBytesToHex(DbyteHmStr));    //解密的密文
+//				
+//				if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+//					JOptionPane.showConfirmDialog(this, "验证成功", "将解密", JOptionPane.WARNING_MESSAGE);
+//					JDecryptionStr = JDecryptionString;   //将解密信息传入
+//				}				
+//			} catch(NullPointerException N) {
+//				JOptionPane.showConfirmDialog(this, "未输入加密内容或未对输入内容进行加密", "提示", JOptionPane.WARNING_MESSAGE);
+//			}
+//		}
+	}
+	public void Help() {
+		JOptionPane.showMessageDialog(this, "*****************************************\n"
+				+ "* 密码使用秘钥工厂方式自送生成  *\n"
+				+ "*(H(m)||m)加密的密文16进制显示*\n"
+				+ "*****************************************", "帮助", JOptionPane.QUESTION_MESSAGE);
+	}
+	
+	public void actionPerformed(ActionEvent e) {
+    	if(DecryptionStr.isEmpty()) {
+		JOptionPane.showConfirmDialog(this, "未输入加密内容", "提示", JOptionPane.WARNING_MESSAGE);
+	}
+}
+	public void removeUpdate(DocumentEvent r) {
+	
+	}
+	
+	public void changedUpdate(DocumentEvent c) {
+	
+	}
+	
+	public void insertUpdate(DocumentEvent i) {
+		
+	}
+	
+	public void remind() {
+		JOptionPane.showConfirmDialog(this, "未输入加密内容", "提示", JOptionPane.WARNING_MESSAGE);
+	}
+	
+}

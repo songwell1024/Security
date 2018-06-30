@@ -1,0 +1,108 @@
+package System;
+
+import java.awt.*;
+import java.awt.event.*;
+import java.awt.event.ActionListener;
+import EncryptionAlgorithm.BytesAndHex;
+import javax.swing.*;
+import javax.swing.event.DocumentEvent;
+import javax.swing.event.DocumentListener;
+import org.apache.commons.codec.binary.Base64;
+import javax.swing.JOptionPane;  
+import javax.swing.JPanel;
+import javax.swing.JButton;
+import javax.swing.JComboBox;
+import javax.swing.JFrame;
+import javax.swing.JLabel;
+import javax.swing.JTextArea;
+import EncryptionAlgorithm.AESUtil;
+import EncryptionAlgorithm.DESede;
+import EncryptionAlgorithm.DESUtil;
+import EncryptionAlgorithm.HashUtil;
+import EncryptionAlgorithm.RSAUtil;
+
+import java.lang.NullPointerException;
+import java.util.Map;
+
+/**
+ * UI
+ * @author WilsonSong
+ * @version 2018-05-21 
+ */
+@SuppressWarnings("serial")
+public class test  {
+	
+	
+	public static void main(String[] args) {
+		String EncryptionStr;   //密文
+		String DecryptionStr = "哈哈";  //明文
+		String EncryptionKeyStr;  //秘钥
+		String JDecryptionStr;   //解密的密文
+		String  publicKey1,publicKey2;   //公钥
+	    String  privateKey1,privateKey2; //私钥
+		String RKey;    //字节码秘钥
+		byte[] byteResult; //字节码密文
+		String Base64Str; //编码密文	
+		
+		String HStr = HashUtil.string2MD5("DecryptionStr");   //MD5加密  16进制显示
+	
+		//RSA加密
+		Map<String, String> keyMap = RSAUtil.createKeys(1024);
+		publicKey1 = keyMap.get("publicKey");
+	    privateKey1 = keyMap.get("privateKey");
+	    //RSA 加密
+	    EncryptionKeyStr = RSAUtil.privateEncrypt(HStr, RSAUtil.getPrivateKey(privateKey1));
+	   	
+		String EncryptionString = EncryptionKeyStr.concat(DecryptionStr);  //字符串拼接  HM + M
+		
+		
+		//DES加密
+		byte[] byteRKA1 = DESUtil.initKey();   //产生秘钥
+		byteResult = DESUtil.encryptDES(EncryptionString.getBytes(), byteRKA1);
+		EncryptionStr = BytesAndHex.fromBytesToHex(byteResult);
+		
+		String StrRKA1 = BytesAndHex.fromBytesToHex(byteRKA1);
+		//第二轮RSA加密			
+		Map<String, String> keyMap2 = RSAUtil.createKeys(1024);
+		publicKey2 = keyMap2.get("publicKey");
+	    privateKey2 = keyMap2.get("privateKey");
+	    //加密后的内容
+	    RKey = RSAUtil.publicEncrypt(StrRKA1, RSAUtil.getPublicKey(publicKey2));  //16进制显示[H(m)+m]加密后的密文
+		
+	    //RSA解密出DES的秘钥
+		//第一轮解密
+		String StrKey =RSAUtil.privateDecrypt(RKey, RSAUtil.getPrivateKey(privateKey2));
+		
+		
+		//DES 解密
+		byte[] plain1 = DESUtil.decryptDES(byteResult,BytesAndHex.fromHexToBytes( StrKey));				
+		String FirstJDecryptionStr = HashUtil.HexToString(BytesAndHex.fromBytesToHex(plain1));				
+		String HmStr = FirstJDecryptionStr.substring(0,EncryptionKeyStr.length());  //字符串拆分  解密的明文				
+		String JDStr = FirstJDecryptionStr.substring(EncryptionKeyStr.length(),FirstJDecryptionStr.length());  //字符串拆分  解密的明文
+					
+		//String JDecryptionString = HashUtil.HexToString(JDStr); //解密的明文
+		
+		String JDecryptionString = JDStr;
+		//RSA解密hash(m)
+		String DeHmStr =RSAUtil.publicDecrypt(HmStr, RSAUtil.getPublicKey(publicKey1));
+		
+		
+		//HASH加密
+		String EnHmStr  = HashUtil.string2MD5(JDecryptionString);   //MD5加密  16进制显示
+		
+	//	//搞定
+	//	byte[] byteHmStr = Base64.decodeBase64(HmStr);
+	//	byte[] DbyteHmStr = DESUtil.decryptDES(byteHmStr, RKA1);
+	//				
+	//	//转换
+	//	String DeHmStr =  HashUtil.HexToString(BytesAndHex.fromBytesToHex(DbyteHmStr));    //解密的密文
+	//	
+		if(DeHmStr.equals(EnHmStr)) {            //验证H(m)
+			System.out.println("验证成功");
+			JDecryptionStr = JDecryptionString;   //将解密信息传入
+		}				
+    
+}
+}   
+	
+	

@@ -1,0 +1,38 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<section name="Workbench">
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog">
+		<item value="false" key="isRegEx"/>
+		<item value="actionPerformed" key="selection"/>
+		<item value="false" key="casesensitive"/>
+		<item value="false" key="incremental"/>
+		<item value="true" key="wrap"/>
+		<item value="false" key="wholeword"/>
+		<list key="findhistory">
+			<item value="PlainText"/>
+			<item value="actionPerformed"/>
+			<item value="RSA"/>
+			<item value="为"/>
+			<item value="EncryptionKey"/>
+			<item value="SecutityCombo.getItemAt(SecutityCombo.getSelectedIndex())"/>
+			<item value="HashCombo.getItemAt(HashCombo.getSelectedIndex())"/>
+			<item value="JieMiText"/>
+			<item value="MiWenText"/>
+			<item value="MiYaoText"/>
+		</list>
+		<list key="replacehistory">
+			<item value="未"/>
+			<item value="s1"/>
+			<item value="s2"/>
+			<item value="DecryptionText"/>
+			<item value="EncryptionText"/>
+			<item value="EncryptionKey"/>
+		</list>
+	</section>
+	<section name="org.eclipse.ui.texteditor.FindReplaceDialog_dialogBounds">
+		<item value="300" key="DIALOG_WIDTH"/>
+		<item value="1|Microsoft YaHei UI|9.0|0|WINDOWS|1|-12|0|0|0|400|0|0|0|1|0|0|0|0|Microsoft YaHei UI" key="DIALOG_FONT_NAME"/>
+		<item value="410" key="DIALOG_HEIGHT"/>
+		<item value="1289" key="DIALOG_X_ORIGIN"/>
+		<item value="253" key="DIALOG_Y_ORIGIN"/>
+	</section>
+</section>
